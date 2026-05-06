@@ -54,7 +54,7 @@ export default function App() {
             </svg>
           </div>
           <div>
-            <div style={styles.headerTitle}>LiPilot</div>
+            <div style={styles.headerTitle}>Phoenix Pilot</div>
             <div style={styles.headerSubtitle}>
               {settings ? `${PROVIDER_LABELS[settings.llmProvider]} / ${settings.model}` : 'AI Comment Assistant'}
             </div>
@@ -158,11 +158,7 @@ export default function App() {
 
       {/* Footer */}
       <div style={styles.footer}>
-        <span>Supported by </span>
-        <a href="https://travel-code.com/" target="_blank" rel="noopener noreferrer" style={styles.footerLink}>
-          Travel Code
-        </a>
-        <span> — AI-powered corporate travel</span>
+        <span>AI job search assistant for LinkedIn</span>
       </div>
     </div>
   );

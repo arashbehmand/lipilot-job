@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { getSettings, saveSettings, getPersonaObservations, clearPersonaObservations } from '../utils/storage';
 import { testLLMConnection } from '../utils/llm-client';
-import type { LLMProvider, UserSettings, LanguageLevel } from '../types';
+import { fetchPhoenixSessions, testPhoenixConnection } from '../utils/phoenix-client';
+import type { LLMProvider, UserSettings, LanguageLevel, PhoenixSession } from '../types';
 import { PROVIDER_MODELS, PROVIDER_LABELS, LANGUAGE_LEVEL_OPTIONS } from '../types';
 
 export default function App() {
@@ -13,7 +14,12 @@ export default function App() {
     enableEmojis: false,
     languageLevel: 'fluent',
     enableImageAnalysis: false,
-    serviceDescription: '',
+    jobSearchContext: '',
+    phoenixBaseUrl: '',
+    phoenixToken: '',
+    phoenixUserId: '',
+    phoenixSessionId: '',
+    phoenixSessionName: '',
   });
 
   const [observations, setObservations] = useState<{ text: string; timestamp: number }[]>([]);
@@ -21,9 +27,19 @@ export default function App() {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; error?: string } | null>(null);
+  const [isTestingPhoenix, setIsTestingPhoenix] = useState(false);
+  const [phoenixTestResult, setPhoenixTestResult] = useState<
+    { success: boolean; error?: string; sessionCount?: number } | null
+  >(null);
+  const [phoenixSessions, setPhoenixSessions] = useState<PhoenixSession[]>([]);
 
   useEffect(() => {
-    getSettings().then((s) => setSettings(s));
+    getSettings().then((s) => {
+      setSettings(s);
+      if (s.phoenixBaseUrl && s.phoenixToken) {
+        fetchPhoenixSessions(s.phoenixBaseUrl, s.phoenixToken).then(setPhoenixSessions);
+      }
+    });
     getPersonaObservations().then((obs) => setObservations(obs));
   }, []);
 
@@ -54,6 +70,35 @@ export default function App() {
     setIsTesting(false);
   };
 
+  const handleTestPhoenix = async () => {
+    setIsTestingPhoenix(true);
+    setPhoenixTestResult(null);
+    const result = await testPhoenixConnection(
+      settings.phoenixBaseUrl,
+      settings.phoenixToken,
+      settings.phoenixUserId
+    );
+    setPhoenixTestResult(result);
+    if (result.success) {
+      const sessions = await fetchPhoenixSessions(settings.phoenixBaseUrl, settings.phoenixToken);
+      setPhoenixSessions(sessions);
+    }
+    setIsTestingPhoenix(false);
+  };
+
+  const handlePhoenixSessionChange = (sessionId: string) => {
+    const selected = phoenixSessions.find((session) => session.id === sessionId);
+    setSettings((prev) => {
+      const updated = {
+        ...prev,
+        phoenixSessionId: sessionId,
+        phoenixSessionName: selected?.display_name || '',
+      };
+      saveSettings(updated);
+      return updated;
+    });
+  };
+
   const handleClearObservations = async () => {
     await clearPersonaObservations();
     setObservations([]);
@@ -71,8 +116,8 @@ export default function App() {
               <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/>
             </svg>
           </div>
-          <h1 style={styles.title}>LiPilot Settings</h1>
-          <p style={styles.subtitle}>Configure your AI-powered LinkedIn assistant</p>
+          <h1 style={styles.title}>Phoenix Pilot Settings</h1>
+          <p style={styles.subtitle}>Configure your AI job search assistant for LinkedIn</p>
         </div>
 
         {/* Main Card */}
@@ -229,17 +274,91 @@ export default function App() {
             </div>
           </div>
 
-          {/* Service Description */}
+          {/* Job Search Context */}
           <div style={styles.section}>
-            <label style={styles.label}>Service Description <span style={styles.optional}>(optional)</span></label>
-            <p style={styles.hint}>Describe your service or product. When enabled during comment generation, the AI will subtly weave in a mention of your expertise.</p>
+            <label style={styles.label}>Job Search Context <span style={styles.optional}>(optional)</span></label>
+            <p style={styles.hint}>Used in AI-generated comments to subtly position you without sounding like you're actively job hunting.</p>
             <textarea
-              value={settings.serviceDescription}
-              onChange={(e) => setSettings((prev) => ({ ...prev, serviceDescription: e.target.value }))}
-              placeholder="e.g., We help B2B SaaS companies increase qualified leads by 3x using AI-powered outbound..."
-              rows={3}
+              value={settings.jobSearchContext}
+              onChange={(e) => setSettings((prev) => ({ ...prev, jobSearchContext: e.target.value }))}
+              placeholder="e.g., Transitioning from PM to AI engineering. Targeting Series B startups in climate tech..."
+              rows={4}
               style={styles.textarea}
             />
+          </div>
+
+          {/* Phoenix */}
+          <div style={styles.section}>
+            <label style={styles.label}>Phoenix - Message Generation</label>
+            <p style={styles.hint}>Connect a Phoenix session so LinkedIn DMs are generated using your resume and honest job preferences.</p>
+
+            <div style={styles.fieldStack}>
+              <input
+                type="url"
+                value={settings.phoenixBaseUrl}
+                onChange={(e) => setSettings((prev) => ({ ...prev, phoenixBaseUrl: e.target.value }))}
+                placeholder="http://localhost:8000"
+                style={styles.input}
+              />
+              <input
+                type="text"
+                value={settings.phoenixUserId}
+                onChange={(e) => setSettings((prev) => ({ ...prev, phoenixUserId: e.target.value }))}
+                placeholder="Phoenix user ID"
+                style={styles.input}
+              />
+              <div style={styles.apiKeyRow}>
+                <input
+                  type="password"
+                  value={settings.phoenixToken}
+                  onChange={(e) => setSettings((prev) => ({ ...prev, phoenixToken: e.target.value }))}
+                  placeholder="Phoenix bearer token"
+                  style={styles.input}
+                />
+                <button
+                  onClick={handleTestPhoenix}
+                  disabled={isTestingPhoenix || !settings.phoenixBaseUrl || !settings.phoenixToken}
+                  style={{
+                    ...styles.testButton,
+                    opacity: isTestingPhoenix || !settings.phoenixBaseUrl || !settings.phoenixToken ? 0.5 : 1,
+                  }}
+                >
+                  {isTestingPhoenix ? 'Testing...' : 'Test'}
+                </button>
+              </div>
+            </div>
+
+            {phoenixTestResult && (
+              <div
+                style={{
+                  ...styles.testResult,
+                  background: phoenixTestResult.success ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  borderColor: phoenixTestResult.success ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+                  color: phoenixTestResult.success ? '#4ade80' : '#fca5a5',
+                }}
+              >
+                {phoenixTestResult.success
+                  ? `Connected - ${phoenixTestResult.sessionCount ?? 0} sessions available`
+                  : phoenixTestResult.error || 'Connection failed'}
+              </div>
+            )}
+
+            <div style={{ marginTop: 12 }}>
+              <label style={styles.smallLabel}>Active Session</label>
+              <select
+                value={settings.phoenixSessionId}
+                onChange={(e) => handlePhoenixSessionChange(e.target.value)}
+                style={styles.select}
+              >
+                <option value="">Select a Phoenix session</option>
+                {phoenixSessions.map((session) => (
+                  <option key={session.id} value={session.id}>
+                    {session.display_name}
+                  </option>
+                ))}
+              </select>
+              <p style={styles.hint}>Note: The session must have an honest context configured.</p>
+            </div>
           </div>
 
           {/* Divider */}
@@ -291,11 +410,7 @@ export default function App() {
 
         {/* Footer */}
         <div style={styles.footer}>
-          <span>Supported by </span>
-          <a href="https://travel-code.com/" target="_blank" rel="noopener noreferrer" style={styles.footerLink}>
-            Travel Code
-          </a>
-          <span> — AI-powered corporate travel platform</span>
+          <span>Phoenix Pilot - AI job search assistant for LinkedIn</span>
         </div>
       </div>
     </div>
@@ -359,6 +474,13 @@ const styles: Record<string, React.CSSProperties> = {
     textTransform: 'uppercase' as const,
     letterSpacing: '0.5px',
   },
+  smallLabel: {
+    display: 'block',
+    fontSize: 12,
+    fontWeight: 600,
+    color: '#cbd5e1',
+    marginBottom: 6,
+  },
   hint: {
     fontSize: 12,
     color: '#6b7280',
@@ -396,6 +518,11 @@ const styles: Record<string, React.CSSProperties> = {
   apiKeyRow: {
     display: 'flex',
     gap: 8,
+  },
+  fieldStack: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: 10,
   },
   input: {
     flex: 1,

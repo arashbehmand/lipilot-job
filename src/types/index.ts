@@ -44,7 +44,18 @@ export interface UserSettings {
   enableEmojis: boolean;
   languageLevel: LanguageLevel;
   enableImageAnalysis: boolean;
-  serviceDescription: string;
+  jobSearchContext: string;
+  phoenixBaseUrl: string;
+  phoenixToken: string;
+  phoenixUserId: string;
+  phoenixSessionId: string;
+  phoenixSessionName: string;
+}
+
+export interface PhoenixSession {
+  id: string;
+  display_name: string;
+  created_at: string;
 }
 
 export const LANGUAGE_LEVEL_OPTIONS: { value: LanguageLevel; label: string; description: string }[] = [
@@ -108,8 +119,7 @@ export interface GenerateRequest {
   languageLevel: LanguageLevel;
   userThoughts?: string;
   enableImageAnalysis: boolean;
-  includeServiceOffer: boolean;
-  serviceDescription?: string;
+  jobSearchContext?: string;
 }
 
 export interface RefineRequest {
@@ -120,13 +130,13 @@ export interface RefineRequest {
 export interface CommentScores {
   engagement: number;
   expertise: number;
-  conversion: number;
+  authenticity: number;
 }
 
 export type RecommendationTag =
   | 'Best for Engagement'
   | 'Most Insightful'
-  | 'Best for Sales'
+  | 'Best for Getting a Reply'
   | 'Safe & Professional'
   | 'Most Creative'
   | 'Thought-Provoking';
@@ -175,6 +185,10 @@ export interface MessageResponse {
   error?: string;
   // Config check
   settings?: UserSettings;
+  configStatus?: {
+    commentsConfigured: boolean;
+    phoenixConfigured: boolean;
+  };
   // Messaging mode
   replies?: ScoredReply[];
   summary?: ConversationSummary;
@@ -204,13 +218,24 @@ export interface ConversationContext {
   topic?: string;
   sentiment?: 'positive' | 'neutral' | 'negotiating' | 'cold';
   lastMessageFrom: 'me' | 'other';
+  detectedIntent?: MessageIntent;
+  isRecruiter?: boolean;
 }
+
+export type MessageIntent =
+  | 'recruiter-inbound'
+  | 'cold-outreach'
+  | 'follow-up'
+  | 'thank-you'
+  | 'informational'
+  | 'connection-request'
+  | 'general';
 
 export type MessagingToneType =
   | 'friendly'
   | 'professional'
   | 'follow-up'
-  | 'closing-deal'
+  | 'informational'
   | 'networking';
 
 export const MESSAGING_TONE_OPTIONS: { value: MessagingToneType; label: string; description: string }[] = [
@@ -230,9 +255,9 @@ export const MESSAGING_TONE_OPTIONS: { value: MessagingToneType; label: string; 
     description: 'Gentle reminder or check-in',
   },
   {
-    value: 'closing-deal',
-    label: 'Closing Deal',
-    description: 'Moving toward agreement or next steps',
+    value: 'informational',
+    label: 'Informational Interview',
+    description: 'Requesting an informational call or meeting',
   },
   {
     value: 'networking',
@@ -248,8 +273,7 @@ export interface MessagingRequest {
   enableEmojis: boolean;
   languageLevel: LanguageLevel;
   userThoughts?: string;
-  includeServiceOffer: boolean;
-  serviceDescription?: string;
+  jobSearchContext?: string;
 }
 
 export interface MessagingResponse {
@@ -265,11 +289,12 @@ export interface ScoredReply {
 }
 
 export type MessagingRecommendationTag =
+  | 'Most Authentic'
   | 'Best Follow-up'
   | 'Move Forward'
   | 'Build Rapport'
   | 'Safe Choice'
-  | 'Close the Deal';
+  | 'Get the Meeting';
 
 export interface ConversationSummary {
   topic: string;

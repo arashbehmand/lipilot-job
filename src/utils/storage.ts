@@ -9,7 +9,12 @@ const STORAGE_KEYS = {
   ENABLE_EMOJIS: 'enable_emojis',
   LANGUAGE_LEVEL: 'language_level',
   ENABLE_IMAGE_ANALYSIS: 'enable_image_analysis',
-  SERVICE_DESCRIPTION: 'service_description',
+  JOB_SEARCH_CONTEXT: 'job_search_context',
+  PHOENIX_BASE_URL: 'phoenix_base_url',
+  PHOENIX_TOKEN: 'phoenix_token',
+  PHOENIX_USER_ID: 'phoenix_user_id',
+  PHOENIX_SESSION_ID: 'phoenix_session_id',
+  PHOENIX_SESSION_NAME: 'phoenix_session_name',
   FEEDBACK: 'comment_feedback',
   PERSONA_OBSERVATIONS: 'persona_observations',
 } as const;
@@ -25,7 +30,12 @@ const DEFAULT_SETTINGS: UserSettings = {
   enableEmojis: false,
   languageLevel: 'fluent',
   enableImageAnalysis: false,
-  serviceDescription: '',
+  jobSearchContext: '',
+  phoenixBaseUrl: '',
+  phoenixToken: '',
+  phoenixUserId: '',
+  phoenixSessionId: '',
+  phoenixSessionName: '',
 };
 
 /**
@@ -73,7 +83,12 @@ export async function getSettings(): Promise<UserSettings> {
         STORAGE_KEYS.ENABLE_EMOJIS,
         STORAGE_KEYS.LANGUAGE_LEVEL,
         STORAGE_KEYS.ENABLE_IMAGE_ANALYSIS,
-        STORAGE_KEYS.SERVICE_DESCRIPTION,
+        STORAGE_KEYS.JOB_SEARCH_CONTEXT,
+        STORAGE_KEYS.PHOENIX_BASE_URL,
+        STORAGE_KEYS.PHOENIX_TOKEN,
+        STORAGE_KEYS.PHOENIX_USER_ID,
+        STORAGE_KEYS.PHOENIX_SESSION_ID,
+        STORAGE_KEYS.PHOENIX_SESSION_NAME,
       ], (result) => {
         if (chrome.runtime.lastError) {
           console.warn('Storage error:', chrome.runtime.lastError);
@@ -88,7 +103,12 @@ export async function getSettings(): Promise<UserSettings> {
           enableEmojis: result[STORAGE_KEYS.ENABLE_EMOJIS] ?? false,
           languageLevel: result[STORAGE_KEYS.LANGUAGE_LEVEL] || 'fluent',
           enableImageAnalysis: result[STORAGE_KEYS.ENABLE_IMAGE_ANALYSIS] ?? false,
-          serviceDescription: result[STORAGE_KEYS.SERVICE_DESCRIPTION] || '',
+          jobSearchContext: result[STORAGE_KEYS.JOB_SEARCH_CONTEXT] || '',
+          phoenixBaseUrl: result[STORAGE_KEYS.PHOENIX_BASE_URL] || '',
+          phoenixToken: result[STORAGE_KEYS.PHOENIX_TOKEN] || '',
+          phoenixUserId: result[STORAGE_KEYS.PHOENIX_USER_ID] || '',
+          phoenixSessionId: result[STORAGE_KEYS.PHOENIX_SESSION_ID] || '',
+          phoenixSessionName: result[STORAGE_KEYS.PHOENIX_SESSION_NAME] || '',
         });
       });
     }),
@@ -108,7 +128,12 @@ export async function saveSettings(settings: UserSettings): Promise<void> {
           [STORAGE_KEYS.ENABLE_EMOJIS]: settings.enableEmojis,
           [STORAGE_KEYS.LANGUAGE_LEVEL]: settings.languageLevel,
           [STORAGE_KEYS.ENABLE_IMAGE_ANALYSIS]: settings.enableImageAnalysis,
-          [STORAGE_KEYS.SERVICE_DESCRIPTION]: settings.serviceDescription,
+          [STORAGE_KEYS.JOB_SEARCH_CONTEXT]: settings.jobSearchContext,
+          [STORAGE_KEYS.PHOENIX_BASE_URL]: settings.phoenixBaseUrl,
+          [STORAGE_KEYS.PHOENIX_TOKEN]: settings.phoenixToken,
+          [STORAGE_KEYS.PHOENIX_USER_ID]: settings.phoenixUserId,
+          [STORAGE_KEYS.PHOENIX_SESSION_ID]: settings.phoenixSessionId,
+          [STORAGE_KEYS.PHOENIX_SESSION_NAME]: settings.phoenixSessionName,
         },
         () => {
           if (chrome.runtime.lastError) {
@@ -369,7 +394,28 @@ export async function migrateFromSaaSVersion(): Promise<void> {
           'fullenrich_api_key',
         ], () => {
           chrome.storage.local.set({ migration_v2_done: true }, () => {
-            console.log('[LiPilot] Migration from SaaS version completed');
+            console.log('[Phoenix Pilot] Migration from SaaS version completed');
+            resolve();
+          });
+        });
+      });
+    }),
+    undefined
+  );
+}
+
+export async function migrateFromSalesVersion(): Promise<void> {
+  return safeStorageOperation(
+    () => new Promise((resolve) => {
+      chrome.storage.local.get(['migration_phoenix_pilot_done'], (result) => {
+        if (result.migration_phoenix_pilot_done) {
+          resolve();
+          return;
+        }
+
+        chrome.storage.local.remove(['service_description'], () => {
+          chrome.storage.local.set({ migration_phoenix_pilot_done: true }, () => {
+            console.log('[Phoenix Pilot] Migration from sales version completed');
             resolve();
           });
         });

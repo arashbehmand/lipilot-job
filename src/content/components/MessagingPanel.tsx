@@ -6,7 +6,7 @@ const MESSAGING_TONE_OPTIONS: { value: MessagingToneType; label: string }[] = [
   { value: 'friendly', label: 'Friendly' },
   { value: 'professional', label: 'Professional' },
   { value: 'follow-up', label: 'Follow-up' },
-  { value: 'closing-deal', label: 'Closing Deal' },
+  { value: 'informational', label: 'Informational Interview' },
   { value: 'networking', label: 'Networking' },
 ];
 
@@ -62,12 +62,11 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
   const [replies, setReplies] = useState<ScoredReply[]>([]);
   const [summary, setSummary] = useState<ConversationSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasApiKey, setHasApiKey] = useState(true);
+  const [hasPhoenixSession, setHasPhoenixSession] = useState(true);
+  const [sessionName, setSessionName] = useState('');
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [includeServiceOffer, setIncludeServiceOffer] = useState(false);
-  const [hasServiceDescription, setHasServiceDescription] = useState(false);
 
-  const canGenerate = !isScanning && conversationContext && conversationContext.messages.length > 0 && hasApiKey;
+  const canGenerate = !isScanning && conversationContext && conversationContext.messages.length > 0 && hasPhoenixSession;
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -75,8 +74,8 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
 
   useEffect(() => {
     getSettings().then((settings) => {
-      setHasApiKey(!!settings.apiKey);
-      setHasServiceDescription(!!settings.serviceDescription?.trim());
+      setHasPhoenixSession(!!settings.phoenixBaseUrl && !!settings.phoenixToken && !!settings.phoenixSessionId);
+      setSessionName(settings.phoenixSessionName || '');
     });
   }, []);
 
@@ -150,8 +149,8 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
     try {
       const settings = await getSettings();
       
-      if (!settings.apiKey) {
-        setHasApiKey(false);
+      if (!settings.phoenixBaseUrl || !settings.phoenixToken || !settings.phoenixSessionId) {
+        setHasPhoenixSession(false);
         return;
       }
 
@@ -164,8 +163,7 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
           enableEmojis: settings.enableEmojis ?? false,
           languageLevel: settings.languageLevel || 'fluent',
           userThoughts: userThoughts.trim() || undefined,
-          includeServiceOffer: includeServiceOffer && !!settings.serviceDescription?.trim(),
-          serviceDescription: includeServiceOffer ? settings.serviceDescription : undefined,
+          jobSearchContext: settings.jobSearchContext || undefined,
         },
       };
 
@@ -208,8 +206,8 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
     }
   };
 
-  // No API Key State
-  if (!hasApiKey) {
+  // No Phoenix Session State
+  if (!hasPhoenixSession) {
     return (
       <div className="panel messaging-panel" ref={panelRef}>
         <div className="panel-header">
@@ -235,8 +233,8 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
                 <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>
               </svg>
             </div>
-            <h3>API Key Required</h3>
-            <p>Please configure your API key in the extension settings.</p>
+            <h3>Phoenix Session Required</h3>
+            <p>A Phoenix session is required to generate messages.</p>
             <button className="settings-btn" onClick={openSettings}>
               Open Settings
             </button>
@@ -244,9 +242,7 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
         </div>
 
         <div className="panel-footer">
-          <span>Supported by </span>
-          <a href="https://travel-code.com/" target="_blank" rel="noopener noreferrer" className="sponsor-link">Travel Code</a>
-          <span> — AI-powered corporate travel platform. Managing all corporate travel in one place.</span>
+          <span>Phoenix Pilot - AI job search assistant for LinkedIn</span>
         </div>
       </div>
     );
@@ -334,7 +330,7 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
                 setUserThoughts(e.target.value);
                 adjustTextareaHeight();
               }}
-              placeholder="e.g., Schedule a call for next week, or ask about their budget..."
+              placeholder="e.g., Ask for a 20-min call, thank them for the intro, schedule next steps..."
               rows={2}
             />
             {userThoughts && (
@@ -356,34 +352,21 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
           </div>
         </div>
 
-        {/* Include Service Offer Toggle */}
+        {/* Phoenix Session */}
         <div className="section">
-          <label className={`service-offer-toggle ${!hasServiceDescription ? 'disabled' : ''}`}>
-            <div className="toggle-left">
-              <div className="toggle-icon">
+          <div className="phoenix-session-badge">
+            {sessionName ? (
+              <>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                   <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                 </svg>
-              </div>
-              <div className="toggle-text">
-                <span className="toggle-label">Include Service Offer</span>
-                {hasServiceDescription ? (
-                  <span className="toggle-hint">Subtly mention your expertise</span>
-                ) : (
-                  <span className="toggle-hint warning">Configure in Settings first</span>
-                )}
-              </div>
-            </div>
-            <input
-              type="checkbox"
-              checked={includeServiceOffer}
-              onChange={(e) => setIncludeServiceOffer(e.target.checked)}
-              disabled={!hasServiceDescription}
-              className="toggle-checkbox"
-            />
-            <span className={`toggle-switch ${includeServiceOffer ? 'active' : ''}`} />
-          </label>
+                <span>{sessionName}</span>
+              </>
+            ) : (
+              <span className="warning">No Phoenix session</span>
+            )}
+          </div>
         </div>
 
         {/* Tone Selector */}
@@ -514,11 +497,8 @@ export function MessagingPanel({ conversationContext, isScanning = false, onClos
 
       {/* Sponsor Footer */}
       <div className="panel-footer">
-        <span>Supported by </span>
-        <a href="https://travel-code.com/" target="_blank" rel="noopener noreferrer" className="sponsor-link">Travel Code</a>
-        <span> — AI-powered corporate travel platform. Managing all corporate travel in one place.</span>
+        <span>Phoenix Pilot - AI job search assistant for LinkedIn</span>
       </div>
     </div>
   );
 }
-

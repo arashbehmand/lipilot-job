@@ -1882,7 +1882,30 @@ function getPanelStyles(): string {
       font-size: 10px;
     }
 
-    /* Service Offer Toggle */
+    .phoenix-session-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: rgba(14, 165, 233, 0.08);
+      border: 1px solid rgba(14, 165, 233, 0.22);
+      border-radius: 10px;
+      color: #bfdbfe;
+      font-size: 12px;
+      font-weight: 500;
+      line-height: 1.4;
+    }
+
+    .phoenix-session-badge svg {
+      flex-shrink: 0;
+      color: #38bdf8;
+    }
+
+    .phoenix-session-badge .warning {
+      color: #fbbf24;
+    }
+
+    /* Legacy Toggle Styles */
     .service-offer-toggle {
       display: flex;
       align-items: center;

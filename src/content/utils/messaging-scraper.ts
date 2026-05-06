@@ -3,7 +3,7 @@
  * Extracts conversation context from LinkedIn DMs
  */
 
-import type { ConversationContext, ChatMessage } from '../../types';
+import type { ConversationContext, ChatMessage, MessageIntent } from '../../types';
 
 // Selectors for LinkedIn Messaging UI
 const MESSAGING_SELECTORS = {
@@ -254,14 +254,14 @@ function inferConversationTopic(messages: ChatMessage[]): string {
   const allContent = messages.map(m => m.content).join(' ').toLowerCase();
   
   const topicPatterns: { pattern: RegExp; topic: string }[] = [
-    { pattern: /job|position|opportunity|hiring|role|career/i, topic: 'Job opportunity discussion' },
-    { pattern: /project|collaboration|partner|work together/i, topic: 'Collaboration proposal' },
-    { pattern: /service|solution|help|consulting/i, topic: 'Business services' },
+    { pattern: /recruiter|talent|hiring|role|position|opportunity/i, topic: 'Recruiter outreach' },
+    { pattern: /informational|your experience|career path/i, topic: 'Informational interview' },
+    { pattern: /thank you|thanks for|great speaking/i, topic: 'Post-interview follow-up' },
+    { pattern: /application|applied|interview|screening/i, topic: 'Application follow-up' },
+    { pattern: /follow.?up|checking in|touch base/i, topic: 'Follow-up' },
+    { pattern: /connect|mutual|introduction/i, topic: 'Networking connection' },
     { pattern: /meeting|call|schedule|calendar|zoom|coffee/i, topic: 'Scheduling a meeting' },
-    { pattern: /price|cost|budget|quote|proposal/i, topic: 'Pricing negotiation' },
-    { pattern: /connect|networking|intro|introduction/i, topic: 'Networking' },
     { pattern: /question|help|advice|recommend/i, topic: 'Seeking advice' },
-    { pattern: /follow.?up|checking in|touch base/i, topic: 'Follow-up conversation' },
   ];
   
   for (const { pattern, topic } of topicPatterns) {
@@ -271,6 +271,19 @@ function inferConversationTopic(messages: ChatMessage[]): string {
   }
   
   return 'Professional discussion';
+}
+
+function detectMessageIntent(messages: ChatMessage[]): MessageIntent {
+  const allContent = messages.map(m => m.content).join(' ').toLowerCase();
+
+  if (/recruiter|talent|hiring|role|position|opportunity/.test(allContent)) return 'recruiter-inbound';
+  if (/informational|your experience|career path/.test(allContent)) return 'informational';
+  if (/thank you|thanks for|great speaking/.test(allContent)) return 'thank-you';
+  if (/follow.?up|checking in|touch base/.test(allContent)) return 'follow-up';
+  if (/connect|mutual|introduction/.test(allContent)) return 'connection-request';
+  if (/cold|reaching out|came across your profile/.test(allContent)) return 'cold-outreach';
+
+  return 'general';
 }
 
 /**
@@ -294,6 +307,10 @@ export async function scrapeConversationContext(): Promise<ConversationContext |
     const lastMessage = messages[messages.length - 1];
     const topic = inferConversationTopic(messages);
     const sentiment = analyzeConversationSentiment(messages);
+    const detectedIntent = detectMessageIntent(messages);
+    const isRecruiter = /recruiter|talent|hiring/i.test(
+      `${participant.name} ${participant.headline || ''} ${messages.map(m => m.content).join(' ')}`
+    );
     
     console.log('[LinkedIn AI] Scraped conversation:', {
       participant: participant.name,
@@ -310,6 +327,8 @@ export async function scrapeConversationContext(): Promise<ConversationContext |
       topic,
       sentiment,
       lastMessageFrom: lastMessage.sender,
+      detectedIntent,
+      isRecruiter,
     };
   } catch (error) {
     console.error('[LinkedIn AI] Error scraping conversation:', error);
@@ -371,4 +390,3 @@ export function injectTextIntoMessageInput(text: string): boolean {
     return false;
   }
 }
-

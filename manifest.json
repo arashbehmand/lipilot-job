@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "LiPilot",
+  "name": "Phoenix Pilot",
   "version": "2.0.0",
   "description": "Free, open-source AI-powered LinkedIn assistant for generating comments, messages, and posts based on your persona",
   "permissions": [
@@ -11,7 +11,9 @@
     "https://www.linkedin.com/*",
     "https://api.openai.com/*",
     "https://api.anthropic.com/*",
-    "https://generativelanguage.googleapis.com/*"
+    "https://generativelanguage.googleapis.com/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
   ],
   "background": {
     "service_worker": "src/background/index.ts",
@@ -42,8 +44,7 @@
       "48": "icon48.png",
       "128": "icon128.png"
     },
-    "default_title": "LiPilot",
+    "default_title": "Phoenix Pilot",
     "default_popup": "popup.html"
   }
 }
-

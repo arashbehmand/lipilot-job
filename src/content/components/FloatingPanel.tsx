@@ -80,14 +80,12 @@ export function FloatingPanel({ postData, isScanning = false, onClose, onInsertC
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedHistoryId, setCopiedHistoryId] = useState<string | null>(null);
-  const [includeServiceOffer, setIncludeServiceOffer] = useState(false);
-  const [hasServiceDescription, setHasServiceDescription] = useState(false);
   const [analyzeImage, setAnalyzeImage] = useState(false); // Will auto-enable if image found
   const [imageAnalysisEnabled, setImageAnalysisEnabled] = useState(false);
   const [userConfig, setUserConfig] = useState<{
     enableEmojis: boolean;
     languageLevel: string;
-    serviceDescription: string;
+    jobSearchContext: string;
   } | null>(null);
 
   // Check if we have enough context to generate
@@ -145,7 +143,7 @@ export function FloatingPanel({ postData, isScanning = false, onClose, onInsertC
       setUserConfig({
         enableEmojis: settings.enableEmojis ?? false,
         languageLevel: settings.languageLevel || 'fluent',
-        serviceDescription: settings.serviceDescription || '',
+        jobSearchContext: settings.jobSearchContext || '',
       });
 
       // Check if required fields are configured
@@ -155,7 +153,6 @@ export function FloatingPanel({ postData, isScanning = false, onClose, onInsertC
       const isFullyConfigured = hasPersona && hasApiKey;
 
       setIsConfigured(isFullyConfigured);
-      setHasServiceDescription(!!settings.serviceDescription?.trim());
       setImageAnalysisEnabled(settings.enableImageAnalysis ?? false);
       setAnalyzeImage(settings.enableImageAnalysis ?? false);
 
@@ -259,8 +256,7 @@ export function FloatingPanel({ postData, isScanning = false, onClose, onInsertC
           languageLevel: userConfig.languageLevel as any,
           userThoughts: userThoughts.trim() || undefined,
           enableImageAnalysis: analyzeImage && !!postData?.imageUrl,
-          includeServiceOffer: includeServiceOffer && !!userConfig.serviceDescription?.trim(),
-          serviceDescription: includeServiceOffer ? userConfig.serviceDescription : undefined,
+          jobSearchContext: userConfig.jobSearchContext || undefined,
         },
       };
 
@@ -473,9 +469,7 @@ export function FloatingPanel({ postData, isScanning = false, onClose, onInsertC
           </div>
 
           <div className="panel-footer">
-            <span>Supported by </span>
-            <a href="https://travel-code.com/" target="_blank" rel="noopener noreferrer" className="sponsor-link">Travel Code</a>
-            <span> — AI-powered corporate travel platform. Managing all corporate travel in one place.</span>
+            <span>Phoenix Pilot - AI job search assistant for LinkedIn</span>
           </div>
         </div>
       </>
@@ -567,36 +561,6 @@ export function FloatingPanel({ postData, isScanning = false, onClose, onInsertC
                   </button>
                 )}
               </div>
-            </div>
-
-            {/* Include Service Offer Toggle */}
-            <div className="section">
-              <label className={`service-offer-toggle ${!hasServiceDescription ? 'disabled' : ''}`}>
-                <div className="toggle-left">
-                  <div className="toggle-icon">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                    </svg>
-                  </div>
-                  <div className="toggle-text">
-                    <span className="toggle-label">Include Service Offer</span>
-                    {hasServiceDescription ? (
-                      <span className="toggle-hint">Subtly promote your expertise</span>
-                    ) : (
-                      <span className="toggle-hint warning">Configure in Settings first</span>
-                    )}
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={includeServiceOffer}
-                  onChange={(e) => setIncludeServiceOffer(e.target.checked)}
-                  disabled={!hasServiceDescription}
-                  className="toggle-checkbox"
-                />
-                <span className={`toggle-switch ${includeServiceOffer ? 'active' : ''}`} />
-              </label>
             </div>
 
             {/* Tone Selector */}
@@ -851,9 +815,7 @@ export function FloatingPanel({ postData, isScanning = false, onClose, onInsertC
 
       {/* Sponsor Footer */}
       <div className="panel-footer">
-        <span>Supported by </span>
-        <a href="https://travel-code.com/" target="_blank" rel="noopener noreferrer" className="sponsor-link">Travel Code</a>
-        <span> — AI-powered corporate travel platform. Managing all corporate travel in one place.</span>
+        <span>Phoenix Pilot - AI job search assistant for LinkedIn</span>
       </div>
       </div>
     </>

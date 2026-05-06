@@ -1,122 +1,130 @@
-# LiPilot — Free Open-Source AI Comment Assistant for LinkedIn
+# Phoenix Pilot
 
-LiPilot is a free, open-source Chrome extension that generates smart, context-aware LinkedIn comments using AI. It learns your voice over time, analyzes post images, understands thread context, and helps you engage authentically — all running locally in your browser with no server or account required.
+Phoenix Pilot is a Chrome extension for job seekers using LinkedIn. It helps draft authentic comments, posts, and LinkedIn DMs while connecting message generation to a Phoenix Job Assistant session.
 
-**Supported by [Travel Code](https://travel-code.com) — AI-powered corporate travel management platform.**
+The extension keeps comment and post generation on the local bring-your-own-key LLM path. LinkedIn DM generation is routed through Phoenix so replies can use your resume, honest job preferences, and session communication history.
 
----
+## What It Does
 
-## Screenshots
+- **LinkedIn comments**: Generates scored comment options using your persona, preferred tone, language level, image analysis, and optional job-search context.
+- **LinkedIn DMs**: Scrapes the active conversation, syncs it into Phoenix as a contact-specific communication-history block, then runs Phoenix's `linkedin_response` task.
+- **LinkedIn posts**: Generates first-person LinkedIn posts from a topic, tone, and key points.
+- **Persona learning**: Learns from edits you make to generated comments and applies those preferences later.
+- **Phoenix session sync**: Preserves existing email threads, notes, and other context by replacing only the relevant LinkedIn contact block.
 
-| AI Comment Generation | DM Co-pilot | Post Assistant |
-|:---:|:---:|:---:|
-| ![Comments](screenshots/lipilot-comments.png) | ![Messages](screenshots/lipilot-messages.png) | ![Post](screenshots/lipilot-post.png) |
-| Generate context-aware comments with scoring | Smart replies for LinkedIn conversations | Create posts with templates and tone control |
+## Architecture
 
-| Extension Popup | Settings — Provider & Persona | Settings — Preferences |
-|:---:|:---:|:---:|
-| ![Extension](screenshots/lipilot-extension.png) | ![Settings 1](screenshots/lipilot-settings-1.png) | ![Settings 2](screenshots/lipilot-settings-2.png) |
-| Quick status and navigation | Choose LLM provider, model, and persona | Language, emojis, image analysis, service offer |
+DM generation uses a two-step Phoenix flow:
 
----
+1. `POST /api/v1/sessions/{session_id}/pilot-block`
 
-## Features
+   Syncs the LinkedIn conversation into the session's `communication_history` artifact:
 
-- **Learns Your Voice** — LiPilot observes how you edit its suggestions and builds a profile of your communication style. Over time, comments sound more and more like you.
-- **Multimodal Analysis** — Understands images, carousels, and infographics attached to posts, not just text.
-- **Thread Awareness** — Reads existing comments and replies to generate responses that fit the conversation context.
-- **DM Co-pilot** — Generate context-aware direct messages from any LinkedIn profile or conversation.
-- **Integrated Prospecting** — Weave your service offering naturally into comments without sounding salesy.
-- **Comment Scoring** — Each generated comment is scored for relevance, authenticity, and engagement potential.
-- **Service Offer Integration** — Describe your product or service once, and LiPilot subtly integrates it where appropriate.
-- **Privacy First** — All data stays in your browser. No server, no tracking, no account. Your API key never leaves your machine.
+   ```xml
+   <phoenix-pilot-messages username="Jane Doe" headline="Recruiter at Google" updated="2026-05-06T10:00:00Z">
+   [2026-05-06 10:00] Jane Doe: Hi, I came across your profile...
+   [2026-05-06 10:05] Me: Thanks for reaching out.
+   </phoenix-pilot-messages>
+   ```
 
----
+   If the same contact is synced again, Phoenix Pilot replaces that contact's block. Other contacts and existing email or note context are preserved.
 
-## Quick Install (Ready-to-Use)
+2. `POST /api/v1/sessions/{session_id}/tasks`
 
-1. **Download** the latest build: [lipilot-v2.0.zip](https://lipilot.com/lipilot-v2.0.zip)
-2. **Unzip** the archive to any folder
-3. Open `chrome://extensions` in your browser
-4. Enable **Developer mode** (toggle in the top-right corner)
-5. Click **Load unpacked** and select the unzipped folder
-6. **Done!** Click the LiPilot icon → Settings to configure your API key
+   Runs:
 
-Works on **Chrome, Brave, Edge, Arc**, and any Chromium-based browser.
+   ```json
+   {
+     "task_id": "linkedin_response",
+     "user_inputs": {
+       "draft_content": "Ask for a short intro call"
+     }
+   }
+   ```
 
----
+   The returned `artifact.text_payload` is shown as the suggested LinkedIn reply.
 
-## Build from Source (Developer Mode)
+## Setup
+
+Install dependencies:
 
 ```bash
-git clone https://github.com/egorceo/lipilot.git
-cd lipilot
 npm install
+```
+
+Build the extension:
+
+```bash
 npm run build
 ```
 
-Then load the `dist/` folder as an unpacked extension in `chrome://extensions`.
+Load the generated `lipilot_ready_for_chrome/` directory as an unpacked extension in `chrome://extensions`.
 
----
+## Extension Settings
 
-## How It Works
+Open the extension options page and configure:
 
-1. **Set up** — Open the extension settings, choose your LLM provider (OpenAI, Anthropic, or Google Gemini), enter your API key, and describe your persona.
-2. **Browse LinkedIn** — Navigate to any LinkedIn post. You'll see a small AI button near the comment box.
-3. **Generate** — Click the button. LiPilot reads the post text, images, and existing thread, then generates 3 scored comment options.
-4. **Refine & Insert** — Pick a comment, optionally refine it, and insert it into the comment box.
-5. **Learn** — When you edit a comment before posting, LiPilot learns from your changes and improves future suggestions.
+- LLM provider, API key, model, persona, language level, emoji preference, and image analysis for comments and posts.
+- Optional **Job Search Context** for subtle comment positioning.
+- Phoenix base URL, bearer token, user ID, and active session for LinkedIn DM generation.
 
----
+The selected Phoenix session must have honest context configured for `linkedin_response` to work well.
 
-## Multi-Provider LLM Support
+## Phoenix Backend
 
-LiPilot supports three LLM providers. Bring your own API key:
+The backend endpoint lives in:
 
-| Provider | Models |
-|----------|--------|
-| **OpenAI** | GPT-5.2, GPT-5.1, GPT-4o Mini, GPT-4o |
-| **Anthropic** | Claude Opus 4.6, Claude Sonnet 4.5, Claude Haiku 4.5 |
-| **Google Gemini** | Gemini 2.5 Flash, Gemini 2.5 Pro, Gemini 2.5 Flash Lite |
+```text
+.phoenix/phoenix-job-assistant/src/phoenix_job_assistant/interfaces/api/v1/routers.py
+```
 
----
+The focused backend tests live in:
 
-## Why Open Source?
+```text
+.phoenix/phoenix-job-assistant/tests/interfaces/api/v1/test_pilot_block.py
+```
 
-We built LiPilot as a commercial product, but decided to make it free and open-source. No catches, no freemium, no data harvesting. Just a useful tool for the LinkedIn community.
+Run the targeted backend tests from `.phoenix/phoenix-job-assistant`:
 
----
+```bash
+uv run --with pytest --with pytest-asyncio --with aiosqlite --with aio-pika --with ../phoenix-lib pytest tests/interfaces/api/v1/test_pilot_block.py
+```
 
-## Tech Stack
+## Frontend Tests
 
-- **Chrome Extension** — Manifest V3, service worker background script
-- **Frontend** — React + TypeScript
-- **Build** — Vite + CRXJS
-- **Styling** — Tailwind CSS (content scripts use Shadow DOM for isolation)
-- **LLM** — Direct API calls to OpenAI, Anthropic, and Google Gemini
+There is currently no frontend test harness for the root Chrome extension package:
 
----
+- No `npm test` script.
+- No Vitest, Jest, or Playwright config.
+- No root extension `*.test.*` or `*.spec.*` files.
 
-## Contributing
+Current frontend verification is build-only:
 
-Contributions are welcome! Feel free to open issues and pull requests.
+```bash
+npm run build
+```
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes (`git commit -m 'Add my feature'`)
-4. Push to the branch (`git push origin feature/my-feature`)
-5. Open a Pull Request
+The separate Phoenix webapp under `.phoenix/phoenix-job-assistant-webapp/` does have its own Vitest and Playwright setup, but that is not the Chrome extension frontend.
 
----
+## Useful Scripts
+
+```bash
+npm run dev      # Vite dev build
+npm run build    # Production extension build
+npm run preview  # Preview built assets
+npm run zip      # Build and package extension zip
+```
+
+## Project Notes
+
+- `src/utils/llm-client.ts` is still used for comments, posts, refinement, and persona learning.
+- `src/utils/phoenix-client.ts` is used for Phoenix session listing, connection testing, communication-history sync, and DM reply generation.
+- The extension name is now `Phoenix Pilot`; some generated output directories still use the historical `lipilot_ready_for_chrome` name.
+
+## Acknowledgement
+
+Phoenix Pilot is built on top of LiPilot, the original open-source LinkedIn AI assistant. LiPilot provided the Chrome extension foundation, LinkedIn content-script integration, local LLM provider support, comment generation flow, messaging panel, popup, options UI, and build pipeline that Phoenix Pilot adapts for job-seeker workflows and Phoenix-powered DM generation.
 
 ## License
 
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-## Links
-
-- **Website**: [lipilot.com](https://lipilot.com)
-- **Creator**: [Egor Karpovich](https://www.linkedin.com/in/egor-karpovich/) on LinkedIn
-- **Supported by**: [Travel Code](https://travel-code.com) — AI-powered corporate travel management
+MIT License. See [LICENSE](LICENSE).

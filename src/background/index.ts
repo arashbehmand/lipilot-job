@@ -1,9 +1,11 @@
-import { getSettings, getPersonaObservations, addPersonaObservation, migrateFromSaaSVersion } from '../utils/storage';
+import { getSettings, getPersonaObservations, addPersonaObservation, migrateFromSaaSVersion, migrateFromSalesVersion } from '../utils/storage';
 import { callLLM } from '../utils/llm-client';
-import type { MessageRequest, MessageResponse, GenerateRequest, RefineRequest, RefineResponse, EnrichedPostData, ScoredComment, CommentScores, RecommendationTag, MessagingRequest, ScoredReply, MessagingRecommendationTag, ConversationSummary, ToneType } from '../types';
+import { generateLinkedInReply, formatMessagesText } from '../utils/phoenix-client';
+import type { MessageRequest, MessageResponse, GenerateRequest, RefineRequest, RefineResponse, EnrichedPostData, ScoredComment, CommentScores, RecommendationTag, MessagingRequest, ScoredReply, ToneType } from '../types';
 
 // Run migration on startup
 migrateFromSaaSVersion();
+migrateFromSalesVersion();
 
 // ==================== Message Handlers ====================
 
@@ -77,7 +79,7 @@ chrome.runtime.onMessage.addListener((request: MessageRequest, _sender, sendResp
 // ==================== Comment Generation ====================
 
 async function handleGenerateComments(payload: GenerateRequest): Promise<MessageResponse> {
-  const { postData, tone, userThoughts, enableImageAnalysis, includeServiceOffer, serviceDescription } = payload;
+  const { postData, tone, userThoughts, enableImageAnalysis, jobSearchContext } = payload;
   const settings = await getSettings();
 
   if (!settings.apiKey) {
@@ -89,13 +91,12 @@ async function handleGenerateComments(payload: GenerateRequest): Promise<Message
   const languageLevel = settings.languageLevel;
 
   const shouldAnalyzeImage = enableImageAnalysis && postData.imageUrl;
-  const shouldIncludeService = includeServiceOffer && serviceDescription?.trim();
 
   // Get persona observations for learning
   const observations = await getPersonaObservations();
 
-  const systemPrompt = buildSystemPrompt(persona, postData.threadContext?.mode === 'reply', enableEmojis, languageLevel, userThoughts, !!shouldAnalyzeImage, shouldIncludeService ? serviceDescription : undefined, observations.map(o => o.text));
-  const userPrompt = buildUserPrompt(postData, tone, userThoughts, shouldIncludeService ? serviceDescription : undefined);
+  const systemPrompt = buildSystemPrompt(persona, postData.threadContext?.mode === 'reply', enableEmojis, languageLevel, userThoughts, !!shouldAnalyzeImage, jobSearchContext, observations.map(o => o.text));
+  const userPrompt = buildUserPrompt(postData, tone, userThoughts, jobSearchContext);
 
   // Convert image to base64 if needed
   let imageBase64: string | undefined;
@@ -122,7 +123,7 @@ async function handleGenerateComments(payload: GenerateRequest): Promise<Message
     return { success: false, error: result.error };
   }
 
-  const scoredComments = parseScoredComments(result.content, includeServiceOffer);
+  const scoredComments = parseScoredComments(result.content);
 
   if (scoredComments.length === 0) {
     const comments = parseComments(result.content);
@@ -193,7 +194,7 @@ Write ONLY the rephrased comment:`;
 
     return { success: true, comment: cleanedComment };
   } catch (error) {
-    console.error('[LiPilot] Refine error:', error);
+    console.error('[Phoenix Pilot] Refine error:', error);
     return { success: false, error: error instanceof Error ? error.message : 'Failed to refine comment' };
   }
 }
@@ -204,6 +205,11 @@ async function handleCheckConfig(): Promise<MessageResponse> {
   const settings = await getSettings();
   const hasApiKey = !!settings.apiKey?.trim();
   const hasPersona = !!settings.persona?.trim();
+  const hasPhoenixConfig = !!(
+    settings.phoenixBaseUrl?.trim() &&
+    settings.phoenixToken?.trim() &&
+    settings.phoenixSessionId?.trim()
+  );
 
   if (!hasApiKey || !hasPersona) {
     const missing = [];
@@ -213,10 +219,24 @@ async function handleCheckConfig(): Promise<MessageResponse> {
       success: false,
       error: `Please complete your setup in settings: ${missing.join(', ')}`,
       settings,
+      configStatus: {
+        commentsConfigured: false,
+        phoenixConfigured: hasPhoenixConfig,
+      },
     };
   }
 
-  return { success: true, settings };
+  return {
+    success: true,
+    settings: {
+      ...settings,
+      phoenixSessionName: hasPhoenixConfig ? settings.phoenixSessionName : '',
+    },
+    configStatus: {
+      commentsConfigured: true,
+      phoenixConfigured: hasPhoenixConfig,
+    },
+  };
 }
 
 // ==================== Local Persona Learning ====================
@@ -272,7 +292,7 @@ Respond as JSON: { "observations": ["observation1", "observation2"] }`,
 
     return { success: true };
   } catch (error) {
-    console.error('[LiPilot] Persona learning error:', error);
+    console.error('[Phoenix Pilot] Persona learning error:', error);
     return { success: true }; // Don't fail the main flow
   }
 }
@@ -290,35 +310,34 @@ function calculateSimilarity(a: string, b: string): number {
 // ==================== Messaging Mode ====================
 
 async function handleGenerateMessages(payload: MessagingRequest): Promise<MessageResponse> {
-  const { conversationContext, tone, persona, enableEmojis, languageLevel, userThoughts, includeServiceOffer, serviceDescription } = payload;
+  const { conversationContext, userThoughts } = payload;
   const settings = await getSettings();
 
-  if (!settings.apiKey) {
-    return { success: false, error: 'API key not configured. Please add it in the extension settings.' };
+  if (!settings.phoenixBaseUrl || !settings.phoenixToken || !settings.phoenixSessionId) {
+    return {
+      success: false,
+      error: 'Phoenix session not configured. Open Settings (gear icon) to connect.',
+    };
   }
 
-  const observations = await getPersonaObservations();
-  const systemPrompt = buildMessagingSystemPrompt(persona || settings.persona, enableEmojis, languageLevel, includeServiceOffer ? serviceDescription : undefined, observations.map(o => o.text));
-  const userPrompt = buildMessagingUserPrompt(conversationContext, tone, userThoughts, includeServiceOffer ? serviceDescription : undefined);
-
-  const result = await callLLM(settings.llmProvider, settings.apiKey, settings.model, {
-    systemPrompt,
-    userPrompt,
-    jsonMode: true,
-    temperature: 0.8,
-    maxTokens: 1200,
-  });
+  const result = await generateLinkedInReply(
+    settings.phoenixBaseUrl,
+    settings.phoenixToken,
+    settings.phoenixSessionId,
+    {
+      username: conversationContext.participantName,
+      headline: conversationContext.participantHeadline,
+      messagesText: formatMessagesText(conversationContext),
+    },
+    userThoughts
+  );
 
   if (!result.success) {
     return { success: false, error: result.error };
   }
 
-  const parsed = parseMessagingResponse(result.content);
-  if (!parsed.replies || parsed.replies.length === 0) {
-    return { success: false, error: 'Could not parse generated replies.' };
-  }
-
-  return { success: true, replies: parsed.replies, summary: parsed.summary };
+  const replies: ScoredReply[] = [{ text: result.reply!, recommendationTag: 'Most Authentic' }];
+  return { success: true, replies };
 }
 
 // ==================== Post Generation ====================
@@ -402,14 +421,14 @@ async function convertImageToBase64(imageUrl: string): Promise<{ base64: string;
       reader.readAsDataURL(blob);
     });
   } catch (error) {
-    console.error('[LiPilot] Error converting image to base64:', error);
+    console.error('[Phoenix Pilot] Error converting image to base64:', error);
     return undefined;
   }
 }
 
 // ==================== Prompt Builders ====================
 
-function buildSystemPrompt(persona: string, isReplyMode: boolean = false, enableEmojis: boolean = false, languageLevel: string = 'fluent', userThoughts?: string, hasImage: boolean = false, serviceDescription?: string, learnedTraits?: string[]): string {
+function buildSystemPrompt(persona: string, isReplyMode: boolean = false, enableEmojis: boolean = false, languageLevel: string = 'fluent', userThoughts?: string, hasImage: boolean = false, jobSearchContext?: string, learnedTraits?: string[]): string {
   const defaultPersona = 'You are a seasoned professional who writes high-value, thought-provoking comments on LinkedIn.';
 
   const emojiInstruction = enableEmojis
@@ -428,21 +447,13 @@ You have been provided with an image from the LinkedIn post. Use this visual inf
 5. Connect the visual content with the text content for a more comprehensive response`
     : '';
 
-  const serviceInstruction = serviceDescription
+  const jobContextInstruction = jobSearchContext
     ? `
 
-SERVICE BRIDGING (SUBTLE LEAD GENERATION):
-The user wants to subtly showcase their expertise and services. Their service description:
-"${serviceDescription}"
-
-CRITICAL INSTRUCTIONS FOR SERVICE BRIDGING:
-1. Find a NATURAL connection between the post's topic and the user's service
-2. DO NOT be pushy, salesy, or spammy - absolutely NO hard-sell phrases like "Buy now", "Hire me", "Check out my services"
-3. The bridge must feel organic - as if the user is genuinely contributing expertise, not advertising
-4. Position the user as a thought leader who happens to have relevant experience
-5. Create a subtle opening for business conversation without explicitly pitching
-6. The service mention should be woven into the comment naturally, not tacked on at the end
-7. Focus on adding VALUE first, with the service connection as a secondary element`
+JOB SEEKER CONTEXT:
+The commenter's goal: "${jobSearchContext}"
+If the post overlaps with their target areas, let expertise speak naturally.
+   Never say "I'm looking for a job."`
     : '';
 
   const languageLevelInstructions: Record<string, string> = {
@@ -501,7 +512,7 @@ ${learnedTraits.map(t => `- ${t}`).join('\n')}
 Incorporate these preferences naturally into your comments.`
     : '';
 
-  const basePrompt = `You are a world-class LinkedIn engagement specialist. Your mission is to craft high-value, professional comments that establish the commenter as a thought leader and valuable connection.${userThoughtsInstruction}
+  const basePrompt = `You are a skilled professional helping a job seeker build an authentic LinkedIn presence. Your mission is to craft high-value, professional comments that establish the commenter as thoughtful, credible, and worth replying to.${userThoughtsInstruction}
 
 ${persona ? `The commenter's professional identity: "${persona}"` : defaultPersona}
 
@@ -526,7 +537,7 @@ CORE PRINCIPLES FOR HIGH-VALUE COMMENTS:
 EMOJI POLICY:
 ${emojiInstruction}
 
-${languageInstruction}${imageInstruction}${serviceInstruction}${learnedTraitsSection}`;
+${languageInstruction}${imageInstruction}${jobContextInstruction}${learnedTraitsSection}`;
 
   const formattingRules = `
 
@@ -562,7 +573,7 @@ REPLY MODE - THREAD CONVERSATION:
 AVOID AT ALL COSTS:
 - Generic praise ("Great post!", "Love this!", "So true!")
 - Obvious statements that add no value
-- Self-promotion or pitching (unless Service Bridging is enabled)
+- Self-promotion or pitching
 - Corporate buzzword soup
 - Starting with "I"
 - Sycophantic or overly agreeable tone
@@ -577,12 +588,12 @@ SCORING & OUTPUT FORMAT:
 You MUST respond with a valid JSON object. For each comment, score it on three dimensions (0-10):
 - engagement: How likely to get likes, replies, and start discussions
 - expertise: How much domain knowledge and professional credibility is shown
-- conversion: How well it bridges to business/networking opportunities (relevant even if no service is mentioned)
+- authenticity: How natural, credible, and true-to-person the comment feels
 
 Also assign ONE recommendation_tag from these options:
 - "Best for Engagement" - most likely to get reactions
 - "Most Insightful" - demonstrates deep expertise
-- "Best for Sales" - creates business opportunities
+- "Best for Getting a Reply" - creates authentic reply opportunities
 - "Safe & Professional" - reliable, conservative choice
 - "Most Creative" - unique, stands out
 - "Thought-Provoking" - sparks discussion
@@ -592,18 +603,18 @@ Your response MUST be a JSON object with this exact structure:
   "comments": [
     {
       "text": "First comment here without any surrounding quotes",
-      "scores": { "engagement": 8, "expertise": 7, "conversion": 5 },
+      "scores": { "engagement": 8, "expertise": 7, "authenticity": 5 },
       "recommendation_tag": "Best for Engagement"
     },
     {
       "text": "Second comment here",
-      "scores": { "engagement": 6, "expertise": 9, "conversion": 4 },
+      "scores": { "engagement": 6, "expertise": 9, "authenticity": 4 },
       "recommendation_tag": "Most Insightful"
     },
     {
       "text": "Third comment here",
-      "scores": { "engagement": 7, "expertise": 6, "conversion": 8 },
-      "recommendation_tag": "Best for Sales"
+      "scores": { "engagement": 7, "expertise": 6, "authenticity": 8 },
+      "recommendation_tag": "Best for Getting a Reply"
     }
   ]
 }`;
@@ -611,7 +622,7 @@ Your response MUST be a JSON object with this exact structure:
   return basePrompt + formattingRules + discussionContext + (isReplyMode ? replyModeContext : '') + avoidSection;
 }
 
-function buildUserPrompt(postData: EnrichedPostData, tone: string, userThoughts?: string, serviceDescription?: string): string {
+function buildUserPrompt(postData: EnrichedPostData, tone: string, userThoughts?: string, jobSearchContext?: string): string {
   const { authorName, authorHeadline, postContent, threadContext } = postData;
 
   const toneInstructions: Record<string, string> = {
@@ -667,12 +678,12 @@ USER'S KEY POINT TO INCLUDE:
 IMPORTANT: Translate this point to match the post's language if needed, then weave it naturally into each comment variation. The entire comment must be in the same language as the original post.`;
   }
 
-  if (serviceDescription) {
+  if (jobSearchContext) {
     prompt += `
 
-SERVICE TO SUBTLY BRIDGE:
-"${serviceDescription}"
-IMPORTANT: Find a natural connection to this service/expertise. Position as thought leadership, NOT advertising.`;
+JOB SEARCH CONTEXT:
+"${jobSearchContext}"
+IMPORTANT: If relevant, let the user's expertise and direction show naturally. Do not announce that they are looking for a job.`;
   }
 
   let nextPoint = 5;
@@ -694,157 +705,8 @@ Remember to:
     nextPoint++;
   }
 
-  if (serviceDescription) {
-    prompt += `\n${nextPoint}. Subtly bridge to the user's service - establish authority, don't sell`;
-  }
-
-  return prompt;
-}
-
-// ==================== Messaging Prompts ====================
-
-function buildMessagingSystemPrompt(persona: string, enableEmojis: boolean, languageLevel: string, serviceDescription?: string, learnedTraits?: string[]): string {
-  const defaultPersona = 'You are a skilled communicator who helps craft thoughtful, effective LinkedIn messages.';
-
-  const emojiInstruction = enableEmojis
-    ? 'Use 1-2 emojis sparingly to add warmth where appropriate. Keep it professional.'
-    : 'Do NOT use any emojis. Keep the text clean and professional.';
-
-  const serviceInstruction = serviceDescription
-    ? `
-SERVICE BRIDGING (SUBTLE):
-If appropriate, the user wants to naturally mention their services:
-"${serviceDescription}"
-
-Find an organic opportunity to position this expertise. Do NOT be pushy or salesy. Position as helpful, not promotional.`
-    : '';
-
-  const languageLevelInstructions: Record<string, string> = {
-    'native': 'Use sophisticated, natural language with idioms and nuanced expressions.',
-    'fluent': 'Use rich but accessible vocabulary with natural flow.',
-    'intermediate': 'Use clear, straightforward language. Avoid complex expressions.',
-    'basic': 'Use simple words and short sentences. Very easy to understand.',
-  };
-
-  const languageInstruction = languageLevelInstructions[languageLevel] || languageLevelInstructions['fluent'];
-
-  const learnedTraitsSection = learnedTraits && learnedTraits.length > 0
-    ? `
-
-LEARNED USER PREFERENCES:
-${learnedTraits.map(t => `- ${t}`).join('\n')}`
-    : '';
-
-  return `You are an expert business negotiator and the user's personal conversation co-pilot.
-
-${persona ? `The user's professional identity: "${persona}"` : defaultPersona}
-
-YOUR MISSION:
-- Analyze the conversation history provided
-- Craft replies that feel natural and advance the conversation toward the user's goal
-- Match the tone and language already established in the chat
-- Never sound robotic or templated
-
-COMMUNICATION PRINCIPLES:
-1. **Read the Room**: If the conversation is casual, stay casual. If formal, stay formal.
-2. **Be Concise**: DMs should be brief and punchy. 1-3 sentences is ideal.
-3. **Advance the Goal**: Every message should move the conversation forward - toward a meeting, a deal, or a stronger relationship.
-4. **Be Human**: Use natural transitions, contractions, and conversational flow.
-5. **Don't Overdo It**: Avoid over-enthusiasm ("So excited!", "Amazing!") unless the context warrants it.
-
-AVOID:
-- "Dear [Name]" if the conversation is already casual
-- Long paragraphs - keep it short and scannable
-- Repeated pleasantries if they've already been exchanged
-- Sounding desperate or overly available
-- Generic phrases like "I hope this finds you well" if they've already chatted
-
-EMOJI POLICY:
-${emojiInstruction}
-
-LANGUAGE LEVEL:
-${languageInstruction}
-${serviceInstruction}${learnedTraitsSection}
-
-Generate exactly 3 DISTINCT reply options with different approaches.
-
-Your response MUST be a valid JSON object with this structure:
-{
-  "summary": {
-    "topic": "Brief description of what this conversation is about",
-    "lastMessageSummary": "What the last message was about",
-    "suggestedAction": "What the user should do next (e.g., 'Schedule a call', 'Follow up on proposal')"
-  },
-  "replies": [
-    {
-      "text": "First reply option",
-      "recommendation_tag": "Best Follow-up"
-    },
-    {
-      "text": "Second reply option",
-      "recommendation_tag": "Build Rapport"
-    },
-    {
-      "text": "Third reply option",
-      "recommendation_tag": "Move Forward"
-    }
-  ]
-}
-
-Valid recommendation_tags: "Best Follow-up", "Move Forward", "Build Rapport", "Safe Choice", "Close the Deal"`;
-}
-
-function buildMessagingUserPrompt(context: ConversationContext, tone: string, userThoughts?: string, serviceDescription?: string): string {
-  const { participantName, participantHeadline, messages, topic, sentiment, lastMessageFrom } = context;
-
-  const toneInstructions: Record<string, string> = {
-    'friendly': 'Keep it warm and personable. Build rapport and show genuine interest.',
-    'professional': 'Maintain a business-appropriate tone. Be respectful and to-the-point.',
-    'follow-up': 'Gently remind or check in. Don\'t be pushy but show you\'re engaged.',
-    'closing-deal': 'Move toward concrete next steps. Be confident and action-oriented.',
-    'networking': 'Focus on building the relationship. Find common ground.',
-  };
-
-  const conversationHistory = messages
-    .map((msg) => `[${msg.sender === 'me' ? 'YOU' : participantName}]: ${msg.content}`)
-    .join('\n');
-
-  let prompt = `Generate 3 reply options for this LinkedIn conversation:
-
-CHATTING WITH: ${participantName}
-${participantHeadline ? `THEIR ROLE: ${participantHeadline}` : ''}
-
-CONVERSATION HISTORY:
-${conversationHistory}
-
-CONTEXT ANALYSIS:
-- Topic: ${topic || 'General discussion'}
-- Sentiment: ${sentiment || 'neutral'}
-- Last message from: ${lastMessageFrom === 'me' ? 'You (waiting for their reply)' : participantName}
-
-DESIRED TONE: ${tone}
-${toneInstructions[tone] || ''}`;
-
-  if (userThoughts) {
-    prompt += `
-
-USER'S GOAL FOR THIS REPLY:
-"${userThoughts}"
-IMPORTANT: Incorporate this goal naturally into the reply options.`;
-  }
-
-  if (serviceDescription) {
-    prompt += `
-
-SERVICE TO SUBTLY MENTION (if natural):
-"${serviceDescription}"
-Only include if there's a genuinely organic opportunity.`;
-  }
-
-  if (lastMessageFrom === 'me') {
-    prompt += `
-
-NOTE: The last message was from YOU. The user might be considering a follow-up since there's no response yet. Be mindful of not appearing pushy.`;
+  if (jobSearchContext) {
+    prompt += `\n${nextPoint}. Subtly reflect the user's job search context through expertise, not need`;
   }
 
   return prompt;
@@ -852,7 +714,7 @@ NOTE: The last message was from YOU. The user might be considering a follow-up s
 
 // ==================== Response Parsers ====================
 
-function parseScoredComments(content: string, prioritizeConversion: boolean = false): ScoredComment[] {
+function parseScoredComments(content: string): ScoredComment[] {
   try {
     const parsed = JSON.parse(content);
 
@@ -861,7 +723,7 @@ function parseScoredComments(content: string, prioritizeConversion: boolean = fa
     }
 
     const validTags: RecommendationTag[] = [
-      'Best for Engagement', 'Most Insightful', 'Best for Sales',
+      'Best for Engagement', 'Most Insightful', 'Best for Getting a Reply',
       'Safe & Professional', 'Most Creative', 'Thought-Provoking'
     ];
 
@@ -878,7 +740,7 @@ function parseScoredComments(content: string, prioritizeConversion: boolean = fa
         const normalizedScores: CommentScores = {
           engagement: normalizeScore(scores?.engagement),
           expertise: normalizeScore(scores?.expertise),
-          conversion: normalizeScore(scores?.conversion),
+          authenticity: normalizeScore(scores?.authenticity ?? scores?.conversion),
         };
 
         const recommendationTag: RecommendationTag = validTags.includes(rawTag as RecommendationTag)
@@ -896,9 +758,6 @@ function parseScoredComments(content: string, prioritizeConversion: boolean = fa
 
     if (scoredComments.length > 0) {
       const sortedByScore = [...scoredComments].sort((a, b) => {
-        if (prioritizeConversion) {
-          return b.scores.conversion - a.scores.conversion;
-        }
         return b.scores.engagement - a.scores.engagement;
       });
 
@@ -969,38 +828,4 @@ function cleanComment(comment: string): string {
   cleaned = cleaned.replace(/\s+/g, ' ');
   cleaned = cleaned.trim();
   return cleaned;
-}
-
-function parseMessagingResponse(content: string): { replies: ScoredReply[]; summary?: ConversationSummary } {
-  try {
-    const parsed = JSON.parse(content);
-
-    const validTags: MessagingRecommendationTag[] = [
-      'Best Follow-up', 'Move Forward', 'Build Rapport', 'Safe Choice', 'Close the Deal',
-    ];
-
-    const replies: ScoredReply[] = (parsed.replies || [])
-      .filter((r: unknown) => {
-        if (!r || typeof r !== 'object') return false;
-        const reply = r as Record<string, unknown>;
-        return typeof reply.text === 'string' && (reply.text as string).length > 5;
-      })
-      .map((r: Record<string, unknown>) => ({
-        text: cleanComment(r.text as string),
-        recommendationTag: validTags.includes(r.recommendation_tag as MessagingRecommendationTag)
-          ? (r.recommendation_tag as MessagingRecommendationTag)
-          : 'Safe Choice',
-      }))
-      .slice(0, 3);
-
-    const summary: ConversationSummary | undefined = parsed.summary ? {
-      topic: parsed.summary.topic || 'Professional discussion',
-      lastMessageSummary: parsed.summary.lastMessageSummary || '',
-      suggestedAction: parsed.summary.suggestedAction || 'Continue the conversation',
-    } : undefined;
-
-    return { replies, summary };
-  } catch {
-    return { replies: [] };
-  }
 }

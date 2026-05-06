@@ -38,7 +38,7 @@ export async function callLLM(
         return { content: '', success: false, error: `Unknown provider: ${provider}` };
     }
   } catch (error) {
-    console.error(`[LiPilot] ${provider} API error:`, error);
+    console.error(`[Phoenix Pilot] ${provider} API error:`, error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return { content: '', success: false, error: 'Network error. Please check your internet connection.' };
     }
