@@ -1,8 +1,8 @@
 {
-  "../../../../../../../@crx/manifest": {
-    "file": "assets/crx-manifest.js-BH6QnRRp.js",
+  "../../../../@crx/manifest": {
+    "file": "assets/crx-manifest.js-BbqoKIPd.js",
     "name": "crx-manifest.js",
-    "src": "../../../../../../../@crx/manifest",
+    "src": "../../../../@crx/manifest",
     "isEntry": true
   },
   "_client-D7f9BLy3.js": {
@@ -13,65 +13,65 @@
     "file": "assets/index-DUzzxDJg.js",
     "name": "index"
   },
-  "_llm-client-CDVh1Nha.js": {
-    "file": "assets/llm-client-CDVh1Nha.js",
-    "name": "llm-client"
+  "_phoenix-client-ColsjAQ5.js": {
+    "file": "assets/phoenix-client-ColsjAQ5.js",
+    "name": "phoenix-client"
   },
-  "_storage-BROYPw1S.js": {
-    "file": "assets/storage-BROYPw1S.js",
+  "_storage-C12OAd8Y.js": {
+    "file": "assets/storage-C12OAd8Y.js",
     "name": "storage"
   },
   "index.tsx-loader.js": {
-    "file": "assets/index.tsx-loader-czxD00kJ.js",
+    "file": "assets/index.tsx-loader-ZSzBob_g.js",
     "src": "index.tsx-loader.js"
   },
   "options.html": {
-    "file": "assets/options-mB9csrvz.js",
+    "file": "assets/options-C1-xi4Qh.js",
     "name": "options",
     "src": "options.html",
     "isEntry": true,
     "imports": [
       "_index-DUzzxDJg.js",
       "_client-D7f9BLy3.js",
-      "_storage-BROYPw1S.js",
-      "_llm-client-CDVh1Nha.js"
+      "_storage-C12OAd8Y.js",
+      "_phoenix-client-ColsjAQ5.js"
     ],
     "css": [
       "assets/options-CK1iUZJA.css"
     ]
   },
   "popup.html": {
-    "file": "assets/popup-DwUdC4L4.js",
+    "file": "assets/popup-CyUjNYNg.js",
     "name": "popup",
     "src": "popup.html",
     "isEntry": true,
     "imports": [
       "_index-DUzzxDJg.js",
       "_client-D7f9BLy3.js",
-      "_storage-BROYPw1S.js"
+      "_storage-C12OAd8Y.js"
     ],
     "css": [
       "assets/popup-BFxM7cRW.css"
     ]
   },
   "src/background/index.ts": {
-    "file": "assets/index.ts-Bk9jfGT5.js",
+    "file": "assets/index.ts-Ci9rpVL_.js",
     "name": "index.ts",
     "src": "src/background/index.ts",
     "isEntry": true,
     "imports": [
-      "_storage-BROYPw1S.js",
-      "_llm-client-CDVh1Nha.js"
+      "_storage-C12OAd8Y.js",
+      "_phoenix-client-ColsjAQ5.js"
     ]
   },
   "src/content/index.tsx": {
-    "file": "assets/index.tsx-CM7pHYCL.js",
+    "file": "assets/index.tsx-CKd4ZLL6.js",
     "name": "index.tsx",
     "src": "src/content/index.tsx",
     "isEntry": true,
     "imports": [
       "_client-D7f9BLy3.js",
-      "_storage-BROYPw1S.js"
+      "_storage-C12OAd8Y.js"
     ]
   }
 }
