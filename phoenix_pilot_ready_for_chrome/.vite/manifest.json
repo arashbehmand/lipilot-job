@@ -13,8 +13,8 @@
     "file": "assets/modulepreload-polyfill-B5Qt9EMX.js",
     "name": "modulepreload-polyfill"
   },
-  "_phoenix-client-y9obbWN8.js": {
-    "file": "assets/phoenix-client-y9obbWN8.js",
+  "_phoenix-client-BC57cMag.js": {
+    "file": "assets/phoenix-client-BC57cMag.js",
     "name": "phoenix-client"
   },
   "_storage-VKldj4mN.js": {
@@ -22,11 +22,11 @@
     "name": "storage"
   },
   "index.tsx-loader.js": {
-    "file": "assets/index.tsx-loader-B50WzbIW.js",
+    "file": "assets/index.tsx-loader-D-Q0k_I1.js",
     "src": "index.tsx-loader.js"
   },
   "options.html": {
-    "file": "assets/options-C0WYjFmb.js",
+    "file": "assets/options-Bwu2n0NS.js",
     "name": "options",
     "src": "options.html",
     "isEntry": true,
@@ -34,14 +34,14 @@
       "_modulepreload-polyfill-B5Qt9EMX.js",
       "_client-D7f9BLy3.js",
       "_storage-VKldj4mN.js",
-      "_phoenix-client-y9obbWN8.js"
+      "_phoenix-client-BC57cMag.js"
     ],
     "css": [
-      "assets/options-BVGQ40Sf.css"
+      "assets/options-CeFCpRMA.css"
     ]
   },
   "popup.html": {
-    "file": "assets/popup-B_uyS-FU.js",
+    "file": "assets/popup-DV2EITt_.js",
     "name": "popup",
     "src": "popup.html",
     "isEntry": true,
@@ -49,24 +49,24 @@
       "_modulepreload-polyfill-B5Qt9EMX.js",
       "_client-D7f9BLy3.js",
       "_storage-VKldj4mN.js",
-      "_phoenix-client-y9obbWN8.js"
+      "_phoenix-client-BC57cMag.js"
     ],
     "css": [
-      "assets/popup-n9LAay3C.css"
+      "assets/popup-D6jKrKhZ.css"
     ]
   },
   "src/background/index.ts": {
-    "file": "assets/index.ts-1rn1_4d7.js",
+    "file": "assets/index.ts-BPydwI3A.js",
     "name": "index.ts",
     "src": "src/background/index.ts",
     "isEntry": true,
     "imports": [
       "_storage-VKldj4mN.js",
-      "_phoenix-client-y9obbWN8.js"
+      "_phoenix-client-BC57cMag.js"
     ]
   },
   "src/content/index.tsx": {
-    "file": "assets/index.tsx-C1bKB3Q1.js",
+    "file": "assets/index.tsx-BkdU2sdW.js",
     "name": "index.tsx",
     "src": "src/content/index.tsx",
     "isEntry": true,
