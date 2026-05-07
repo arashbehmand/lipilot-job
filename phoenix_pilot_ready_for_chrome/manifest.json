@@ -2,18 +2,16 @@
   "manifest_version": 3,
   "name": "Phoenix Pilot",
   "version": "2.0.0",
-  "description": "Free, open-source AI-powered LinkedIn assistant for generating comments, messages, and posts based on your persona",
+  "description": "Phoenix-powered LinkedIn message assistant for job seekers",
   "permissions": [
     "storage",
     "activeTab"
   ],
   "host_permissions": [
     "https://www.linkedin.com/*",
-    "https://api.openai.com/*",
-    "https://api.anthropic.com/*",
-    "https://generativelanguage.googleapis.com/*",
     "http://localhost/*",
-    "http://127.0.0.1/*"
+    "http://127.0.0.1/*",
+    "https://api.phoenix0.online/*"
   ],
   "background": {
     "service_worker": "service-worker-loader.js",
@@ -22,7 +20,7 @@
   "content_scripts": [
     {
       "js": [
-        "assets/index.tsx-loader-ZSzBob_g.js"
+        "assets/index.tsx-loader-Du8F0NNz.js"
       ],
       "matches": [
         "https://www.linkedin.com/*"
@@ -58,8 +56,8 @@
       ],
       "resources": [
         "assets/client-D7f9BLy3.js",
-        "assets/storage-C12OAd8Y.js",
-        "assets/index.tsx-CKd4ZLL6.js"
+        "assets/phoenix-client-DYYwlbnA.js",
+        "assets/index.tsx-ULDoJJKK.js"
       ],
       "use_dynamic_url": false
     }
