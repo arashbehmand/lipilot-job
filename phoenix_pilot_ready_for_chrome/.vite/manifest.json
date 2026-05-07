@@ -13,59 +13,66 @@
     "file": "assets/modulepreload-polyfill-B5Qt9EMX.js",
     "name": "modulepreload-polyfill"
   },
-  "_phoenix-client-DYYwlbnA.js": {
-    "file": "assets/phoenix-client-DYYwlbnA.js",
+  "_phoenix-client-y9obbWN8.js": {
+    "file": "assets/phoenix-client-y9obbWN8.js",
     "name": "phoenix-client"
   },
+  "_storage-VKldj4mN.js": {
+    "file": "assets/storage-VKldj4mN.js",
+    "name": "storage"
+  },
   "index.tsx-loader.js": {
-    "file": "assets/index.tsx-loader-Du8F0NNz.js",
+    "file": "assets/index.tsx-loader-B50WzbIW.js",
     "src": "index.tsx-loader.js"
   },
   "options.html": {
-    "file": "assets/options-C68gwzou.js",
+    "file": "assets/options-C0WYjFmb.js",
     "name": "options",
     "src": "options.html",
     "isEntry": true,
     "imports": [
       "_modulepreload-polyfill-B5Qt9EMX.js",
       "_client-D7f9BLy3.js",
-      "_phoenix-client-DYYwlbnA.js"
+      "_storage-VKldj4mN.js",
+      "_phoenix-client-y9obbWN8.js"
     ],
     "css": [
       "assets/options-BVGQ40Sf.css"
     ]
   },
   "popup.html": {
-    "file": "assets/popup-DaiGDuhX.js",
+    "file": "assets/popup-B_uyS-FU.js",
     "name": "popup",
     "src": "popup.html",
     "isEntry": true,
     "imports": [
       "_modulepreload-polyfill-B5Qt9EMX.js",
       "_client-D7f9BLy3.js",
-      "_phoenix-client-DYYwlbnA.js"
+      "_storage-VKldj4mN.js",
+      "_phoenix-client-y9obbWN8.js"
     ],
     "css": [
       "assets/popup-n9LAay3C.css"
     ]
   },
   "src/background/index.ts": {
-    "file": "assets/index.ts-Dljtu6-X.js",
+    "file": "assets/index.ts-1rn1_4d7.js",
     "name": "index.ts",
     "src": "src/background/index.ts",
     "isEntry": true,
     "imports": [
-      "_phoenix-client-DYYwlbnA.js"
+      "_storage-VKldj4mN.js",
+      "_phoenix-client-y9obbWN8.js"
     ]
   },
   "src/content/index.tsx": {
-    "file": "assets/index.tsx-ULDoJJKK.js",
+    "file": "assets/index.tsx-C1bKB3Q1.js",
     "name": "index.tsx",
     "src": "src/content/index.tsx",
     "isEntry": true,
     "imports": [
       "_client-D7f9BLy3.js",
-      "_phoenix-client-DYYwlbnA.js"
+      "_storage-VKldj4mN.js"
     ]
   }
 }
