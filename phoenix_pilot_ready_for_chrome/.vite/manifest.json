@@ -13,66 +13,66 @@
     "file": "assets/modulepreload-polyfill-B5Qt9EMX.js",
     "name": "modulepreload-polyfill"
   },
-  "_phoenix-client-BC57cMag.js": {
-    "file": "assets/phoenix-client-BC57cMag.js",
+  "_phoenix-client-qUVhGu7f.js": {
+    "file": "assets/phoenix-client-qUVhGu7f.js",
     "name": "phoenix-client"
   },
-  "_storage-VKldj4mN.js": {
-    "file": "assets/storage-VKldj4mN.js",
+  "_storage-D9U355wy.js": {
+    "file": "assets/storage-D9U355wy.js",
     "name": "storage"
   },
   "index.tsx-loader.js": {
-    "file": "assets/index.tsx-loader-C3W3CWk_.js",
+    "file": "assets/index.tsx-loader-CamHZiG4.js",
     "src": "index.tsx-loader.js"
   },
   "options.html": {
-    "file": "assets/options-Bwu2n0NS.js",
+    "file": "assets/options-BDmEiTs0.js",
     "name": "options",
     "src": "options.html",
     "isEntry": true,
     "imports": [
       "_modulepreload-polyfill-B5Qt9EMX.js",
       "_client-D7f9BLy3.js",
-      "_storage-VKldj4mN.js",
-      "_phoenix-client-BC57cMag.js"
+      "_storage-D9U355wy.js",
+      "_phoenix-client-qUVhGu7f.js"
     ],
     "css": [
       "assets/options-CeFCpRMA.css"
     ]
   },
   "popup.html": {
-    "file": "assets/popup-DV2EITt_.js",
+    "file": "assets/popup-BkJ2SGCr.js",
     "name": "popup",
     "src": "popup.html",
     "isEntry": true,
     "imports": [
       "_modulepreload-polyfill-B5Qt9EMX.js",
       "_client-D7f9BLy3.js",
-      "_storage-VKldj4mN.js",
-      "_phoenix-client-BC57cMag.js"
+      "_storage-D9U355wy.js",
+      "_phoenix-client-qUVhGu7f.js"
     ],
     "css": [
       "assets/popup-D6jKrKhZ.css"
     ]
   },
   "src/background/index.ts": {
-    "file": "assets/index.ts-BPydwI3A.js",
+    "file": "assets/index.ts-CBCROAf2.js",
     "name": "index.ts",
     "src": "src/background/index.ts",
     "isEntry": true,
     "imports": [
-      "_storage-VKldj4mN.js",
-      "_phoenix-client-BC57cMag.js"
+      "_storage-D9U355wy.js",
+      "_phoenix-client-qUVhGu7f.js"
     ]
   },
   "src/content/index.tsx": {
-    "file": "assets/index.tsx-cuArC-6O.js",
+    "file": "assets/index.tsx-CUQ6cdqV.js",
     "name": "index.tsx",
     "src": "src/content/index.tsx",
     "isEntry": true,
     "imports": [
       "_client-D7f9BLy3.js",
-      "_storage-VKldj4mN.js"
+      "_storage-D9U355wy.js"
     ]
   }
 }
