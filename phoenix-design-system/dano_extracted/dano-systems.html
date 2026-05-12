@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dano — Context-aware literary translation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --paper: #F2EDE2;
+    --ink:   #18181A;
+    --copper: #B56839;
+    --copper-dim: rgba(181,104,57,0.12);
+    --ink-dim: rgba(24,24,26,0.08);
+    --ink-mid: rgba(24,24,26,0.45);
+    --serif: 'Cormorant Garamond', Georgia, serif;
+    --sans: system-ui, -apple-system, sans-serif;
+    /* section-specific surfaces */
+    --surface-reader: #ffffff;
+    --surface-contact: #18181A;
+    --surface-footer:  #18181A;
+    --nav-bg: rgba(242,237,226,0.92);
+    --btn-primary-bg: #18181A;
+    --btn-primary-fg: #F2EDE2;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0F0E0C;
+      --ink:   #EDE8DE;
+      --copper: #D4845A;
+      --copper-dim: rgba(212,132,90,0.14);
+      --ink-dim: rgba(237,232,222,0.08);
+      --ink-mid: rgba(237,232,222,0.44);
+      --surface-reader: #131210;
+      --surface-contact: #0A0909;
+      --surface-footer:  #0A0909;
+      --nav-bg: rgba(15,14,12,0.92);
+      --btn-primary-bg: #D4845A;
+      --btn-primary-fg: #0F0E0C;
+    }
+  }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 1rem;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body {
+      background:
+        radial-gradient(ellipse 60% 40% at 15% 0%, rgba(212,132,90,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 30% at 85% 90%, rgba(212,132,90,0.04) 0%, transparent 60%),
+        #0F0E0C;
+    }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 clamp(1.5rem, 5vw, 4rem);
+    height: 60px;
+    background: var(--nav-bg);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--ink-dim);
+  }
+
+  .nav-logo {
+    font-family: var(--serif);
+    font-size: 1.35rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-size: 0.8125rem;
+    color: var(--ink-mid);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    transition: color 0.15s;
+  }
+  .nav-links a:hover { color: var(--ink); }
+
+  .nav-cta {
+    font-size: 0.8125rem !important;
+    color: var(--ink) !important;
+    border: 1px solid var(--ink-dim) !important;
+    padding: 0.4rem 1rem;
+    border-radius: 100px;
+    transition: border-color 0.15s, color 0.15s !important;
+  }
+  .nav-cta:hover { border-color: var(--copper) !important; color: var(--copper) !important; }
+
+  /* ── LIBRARY ── */
+  .library-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--ink-dim);
+    border: 1px solid var(--ink-dim);
+  }
+
+  .book-card {
+    background: var(--paper);
+    padding: 2rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: none;
+    text-align: left;
+    font-family: inherit;
+  }
+  .book-card:hover { background: #fff; }
+  .book-card.active { background: #fff; }
+  .book-card.placeholder { cursor: default; }
+  .book-card.placeholder:hover { background: var(--paper); }
+
+  .book-card-year {
+    font-size: 0.68rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--copper);
+  }
+
+  .book-card-title {
+    font-family: var(--serif);
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--ink);
+  }
+
+  .book-card-author {
+    font-size: 0.8125rem;
+    color: var(--ink-mid);
+    letter-spacing: 0.04em;
+  }
+
+  .book-card-langs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: auto;
+  }
+
+  .lang-tag {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--ink-dim);
+    color: var(--ink-mid);
+    border-radius: 2px;
+  }
+
+  .book-status {
+    font-size: 0.75rem;
+    color: var(--ink-mid);
+    margin-top: auto;
+    font-style: italic;
+  }
+
+  /* ── ABOUT ── */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: start;
+  }
+  @media (max-width: 700px) { .about-grid { grid-template-columns: 1fr; gap: 2rem; } }
+
+  .about-text h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+  .about-text p {
+    font-size: 0.9375rem;
+    color: var(--ink-mid);
+    line-height: 1.8;
+    text-wrap: pretty;
+  }
+  .about-text p + p { margin-top: 0.75rem; }
+
+  .about-capabilities {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--ink-dim);
+  }
+  .cap-item {
+    display: grid;
+    grid-template-columns: 1.5rem 1fr;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--ink-dim);
+    align-items: start;
+  }
+  .cap-num {
+    font-size: 0.7rem;
+    color: var(--copper);
+    letter-spacing: 0.08em;
+    padding-top: 0.15rem;
+  }
+  .cap-text {
+    font-size: 0.875rem;
+    color: var(--ink-mid);
+    line-height: 1.65;
+  }
+
+  /* ── SECTIONS ── */
+  section { padding: clamp(5rem, 10vw, 9rem) clamp(1.5rem, 5vw, 4rem); }
+
+  .container { max-width: 1080px; margin: 0 auto; }
+
+  /* ── HERO ── */
+  #hero {
+    min-height: calc(88vh - 60px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: clamp(4rem, 10vw, 8rem);
+    padding-bottom: clamp(4rem, 8vw, 6rem);
+  }
+
+  .hero-eyebrow {
+    font-size: 0.7rem;
+    font-family: var(--sans);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 2rem;
+  }
+
+  .hero-title {
+    font-family: var(--serif);
+    font-size: clamp(3.2rem, 8vw, 7rem);
+    font-weight: 300;
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    max-width: 14ch;
+    text-wrap: balance;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: var(--copper);
+  }
+
+  .hero-sub {
+    margin-top: 2rem;
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    color: var(--ink-mid);
+    max-width: 44ch;
+    line-height: 1.7;
+    text-wrap: pretty;
+  }
+
+  .hero-actions {
+    margin-top: 2.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-fg);
+    padding: 0.75rem 1.75rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-family: var(--sans);
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: opacity 0.15s, transform 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--ink-mid);
+    font-size: 0.875rem;
+    text-decoration: none;
+    letter-spacing: 0.01em;
+    transition: color 0.15s;
+  }
+  .btn-ghost:hover { color: var(--copper); }
+  .btn-ghost svg { transition: transform 0.15s; }
+  .btn-ghost:hover svg { transform: translateX(3px); }
+
+  /* ── DIVIDER ── */
+  .rule {
+    border: none;
+    border-top: 1px solid var(--ink-dim);
+    margin: 0 clamp(1.5rem, 5vw, 4rem);
+  }
+
+  /* ── HOW IT WORKS ── */
+  #how { padding-top: clamp(4rem, 8vw, 6rem); padding-bottom: clamp(4rem, 8vw, 6rem); }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 3rem;
+  }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2.5rem 2rem;
+  }
+
+  .step-num {
+    font-family: var(--serif);
+    font-size: 2.5rem;
+    font-weight: 300;
+    color: var(--ink-dim);
+    line-height: 1;
+    margin-bottom: 0.75rem;
+  }
+
+  .step-title {
+    font-family: var(--serif);
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .step-body {
+    font-size: 0.875rem;
+    color: var(--ink-mid);
+    line-height: 1.65;
+  }
+
+  /* ── SAMPLE READER ── */
+  #sample { background: #fff; }
+
+  .reader-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .reader-meta { }
+
+  .book-title {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 400;
+    line-height: 1.1;
+  }
+
+  .book-author {
+    font-size: 0.8125rem;
+    color: var(--ink-mid);
+    letter-spacing: 0.06em;
+    margin-top: 0.35rem;
+  }
+
+  .lang-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .lang-btn {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border-radius: 100px;
+    border: 1px solid var(--ink-dim);
+    background: transparent;
+    color: var(--ink-mid);
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s, background 0.12s;
+    font-family: var(--sans);
+  }
+  .lang-btn:hover { border-color: var(--copper); color: var(--copper); }
+  .lang-btn.active {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  .excerpt-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+  }
+
+  .excerpt-tab {
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    padding: 0.3rem 0.9rem;
+    border-radius: 100px;
+    border: 1px solid var(--ink-dim);
+    background: transparent;
+    color: var(--ink-mid);
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: var(--sans);
+  }
+  .excerpt-tab:hover { border-color: var(--ink); color: var(--ink); }
+  .excerpt-tab.active { background: var(--copper); border-color: var(--copper); color: #fff; }
+
+  .reader-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--ink-dim);
+    border: 1px solid var(--ink-dim);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 640px) {
+    .reader-panels { grid-template-columns: 1fr; }
+  }
+
+  .reader-panel {
+    background: #fff;
+    padding: 2rem;
+  }
+
+  .panel-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    margin-bottom: 1.25rem;
+    display: block;
+  }
+
+  .panel-lang {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--copper);
+    margin-bottom: 1.25rem;
+    display: block;
+  }
+
+  .panel-text {
+    font-family: var(--serif);
+    font-size: 1.05rem;
+    line-height: 1.85;
+    color: var(--ink);
+  }
+
+  .panel-text p + p { margin-top: 1.25rem; }
+
+  .panel-text[dir="rtl"] {
+    font-size: 1.1rem;
+    line-height: 2;
+  }
+
+  .reader-footer {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .quality-note {
+    font-size: 0.8rem;
+    color: var(--ink-mid);
+    max-width: 50ch;
+    line-height: 1.6;
+  }
+
+  .epub-link {
+    font-size: 0.8125rem;
+    color: var(--copper);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: opacity 0.15s;
+  }
+  .epub-link:hover { opacity: 0.7; }
+
+  /* ── GRAPH SECTION ── */
+  #graph { background: var(--paper); }
+
+  .graph-intro {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .graph-intro { grid-template-columns: 1fr; gap: 2.5rem; }
+  }
+
+  .graph-caption h2 {
+    font-family: var(--serif);
+    font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 1rem;
+  }
+
+  .graph-caption p {
+    font-size: 0.9375rem;
+    color: var(--ink-mid);
+    line-height: 1.75;
+    max-width: 38ch;
+    text-wrap: pretty;
+  }
+
+  .graph-caption p + p { margin-top: 0.75rem; }
+
+  .graph-legend {
+    margin-top: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.8rem;
+    color: var(--ink-mid);
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .graph-frame {
+    position: relative;
+    border: 1px solid var(--ink-dim);
+    border-radius: 4px;
+    overflow: hidden;
+    background: #faf8f4;
+    padding: 2.5rem;
+  }
+
+  .graph-redacted-note {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mid);
+    opacity: 0.6;
+  }
+
+  /* ── CONTACT ── */
+  #contact { background: #18181A; color: #EDE8DE; }
+  @media (prefers-color-scheme: dark) {
+    #contact { background: #0A0909; }
+  }
+
+  #contact .section-label { color: rgba(237,232,222,0.4); }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 5rem;
+    align-items: start;
+  }
+
+  @media (max-width: 768px) {
+    .contact-grid { grid-template-columns: 1fr; gap: 3rem; }
+  }
+
+  .contact-left h2 {
+    font-family: var(--serif);
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 300;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+
+  .contact-left p {
+    font-size: 0.9rem;
+    color: rgba(237,232,222,0.55);
+    line-height: 1.75;
+    max-width: 34ch;
+    text-wrap: pretty;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-field label {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(237,232,222,0.45);
+  }
+
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    background: rgba(237,232,222,0.06);
+    border: 1px solid rgba(237,232,222,0.14);
+    color: #EDE8DE;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.9375rem;
+    font-family: var(--sans);
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+  .form-field input:focus,
+  .form-field select:focus,
+  .form-field textarea:focus {
+    border-color: rgba(237,232,222,0.35);
+  }
+  .form-field select option { background: #131210; }
+  .form-field textarea { resize: vertical; min-height: 120px; line-height: 1.6; }
+
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+
+  .form-submit {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-send {
+    background: var(--copper);
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.75rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-family: var(--sans);
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .btn-send:hover { background: #c97040; transform: translateY(-1px); }
+  .btn-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .form-status { font-size: 0.8rem; color: rgba(237,232,222,0.5); }
+  .form-status.ok { color: #7ab889; }
+  .form-status.err { color: #c47070; }
+
+  /* ── FOOTER ── */
+  footer {
+    background: #18181A;
+    border-top: 1px solid rgba(237,232,222,0.08);
+    padding: 2.5rem clamp(1.5rem, 5vw, 4rem);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .footer-left {
+    font-family: var(--serif);
+    font-size: 1.1rem;
+    color: rgba(237,232,222,0.7);
+  }
+
+  .footer-right {
+    font-size: 0.8rem;
+    color: rgba(237,232,222,0.3);
+    max-width: 44ch;
+    text-align: right;
+    line-height: 1.65;
+  }
+
+  @media (max-width: 600px) {
+    .footer-right { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <a href="#" class="nav-logo">Dano</a>
+  <ul class="nav-links">
+    <li><a href="#library">Library</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#contact" class="nav-cta">Get in touch</a></li>
+  </ul>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="hero">
+  <div class="container">
+    <p class="hero-eyebrow">Context-aware literary translation</p>
+    <h1 class="hero-title">Books that need <em>memory</em> to translate well.</h1>
+    <p class="hero-sub">Dano builds a knowledge graph of your text before translation begins — tracking characters, motifs, and narrative pressures so decisions stay coherent across every paragraph.</p>
+    <div class="hero-actions">
+      <a href="#sample" class="btn-primary">
+        See a sample translation
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="#contact" class="btn-ghost">
+        Discuss a project
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how">
+  <div class="container">
+    <p class="section-label">How it works</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">01</div>
+        <div class="step-title">Entity profiling</div>
+        <div class="step-body">Characters, places, recurring objects, and motifs are extracted and named consistently before any translation work begins.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">02</div>
+        <div class="step-title">Context graph</div>
+        <div class="step-body">Entities and their relationships are mapped into a structured graph. Narrative pressure, tone, and cultural weight are recorded as graph properties.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">03</div>
+        <div class="step-title">Translation with memory</div>
+        <div class="step-body">Each paragraph is translated with the full graph in view — not in isolation. Terminology, register, and voice stay consistent chapter to chapter.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">04</div>
+        <div class="step-title">Review surface</div>
+        <div class="step-body">Translators and editors see the same graph slice used during translation, making quality review grounded rather than intuitive.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">05</div>
+        <div class="step-title">Export</div>
+        <div class="step-body">Clean EPUB and structured JSON output, ready for editorial pipeline or downstream localization systems.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<!-- ── LIBRARY ── -->
+<section id="library">
+  <div class="container">
+    <p class="section-label">Sample library</p>
+    <div class="library-grid">
+      <button class="book-card active" data-book="metamorphosis" onclick="selectBook('metamorphosis', this)">
+        <div class="book-card-year">1915 · German</div>
+        <div class="book-card-title">Die Verwandlung</div>
+        <div class="book-card-author">Franz Kafka</div>
+        <div class="book-card-langs">
+          <span class="lang-tag">EN</span><span class="lang-tag">ES</span>
+          <span class="lang-tag">FA</span><span class="lang-tag">JA</span>
+          <span class="lang-tag">ZH</span><span class="lang-tag">AR</span>
+          <span class="lang-tag">IT</span>
+        </div>
+      </button>
+      <button class="book-card placeholder" data-book="telltale">
+        <div class="book-card-year">1843 · English</div>
+        <div class="book-card-title">The Tell-Tale Heart</div>
+        <div class="book-card-author">Edgar Allan Poe</div>
+        <div class="book-status">Excerpt reader coming soon</div>
+      </button>
+      <button class="book-card placeholder" data-book="magi">
+        <div class="book-card-year">1905 · English</div>
+        <div class="book-card-title">The Gift of the Magi</div>
+        <div class="book-card-author">O. Henry</div>
+        <div class="book-status">Excerpt reader coming soon</div>
+      </button>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" />
+<section id="sample">
+  <div class="container">
+    <p class="section-label">Sample translation</p>
+    <div class="reader-header">
+      <div class="reader-meta">
+        <div class="book-title">Die Verwandlung</div>
+        <div class="book-author">Franz Kafka · 1915 · Source: German</div>
+      </div>
+      <div class="lang-picker" id="langPicker">
+        <button class="lang-btn active" data-lang="en">EN</button>
+        <button class="lang-btn" data-lang="es">ES</button>
+        <button class="lang-btn" data-lang="fa">FA</button>
+        <button class="lang-btn" data-lang="ja">JA</button>
+        <button class="lang-btn" data-lang="zh">ZH</button>
+        <button class="lang-btn" data-lang="ar">AR</button>
+        <button class="lang-btn" data-lang="it">IT</button>
+      </div>
+    </div>
+
+    <div class="excerpt-tabs" id="excerptTabs">
+      <button class="excerpt-tab active" data-excerpt="opening">Opening</button>
+      <button class="excerpt-tab" data-excerpt="weather">The weather</button>
+      <button class="excerpt-tab" data-excerpt="profession">The profession</button>
+    </div>
+
+    <div class="reader-panels">
+      <div class="reader-panel">
+        <span class="panel-label">Original — German</span>
+        <div class="panel-text" id="sourcePanel" dir="ltr"></div>
+      </div>
+      <div class="reader-panel">
+        <span class="panel-lang" id="targetLabel">English</span>
+        <div class="panel-text" id="targetPanel" dir="ltr"></div>
+      </div>
+    </div>
+
+    <div class="reader-footer">
+      <p class="quality-note">These excerpts were translated by Dano from the original German. Terminology and character names are held consistent across all seven target languages using the same context graph.</p>
+      <a href="#" class="epub-link">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3 6l3.5 3.5L10 6M2 11h9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download EPUB
+      </a>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<!-- ── GRAPH SECTION ── -->
+<section id="graph">
+  <div class="container">
+    <p class="section-label">Context map</p>
+    <div class="graph-intro">
+      <div class="graph-caption">
+        <h2>The graph behind the translation</h2>
+        <p>Before translation begins, Dano builds a lightweight context map — entities, their relationships, and the narrative forces connecting them.</p>
+        <p>The map is consulted on every paragraph. When Gregor's voice changes, his relationship to the room changes too, and the translator sees why.</p>
+        <div class="graph-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#B56839;"></div>
+            <span>Characters</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#7a9e87;"></div>
+            <span>Places &amp; spaces</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#8a7aae;"></div>
+            <span>Themes &amp; pressures</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Abstract SVG graph -->
+      <div class="graph-frame">
+        <svg viewBox="0 0 480 340" width="100%" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Context map for Die Verwandlung">
+          <defs>
+            <marker id="arr" viewBox="0 0 8 8" refX="6" refY="4" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M0,0 L0,8 L8,4 z" fill="rgba(24,24,26,0.18)" />
+            </marker>
+          </defs>
+
+          <!-- edges -->
+          <!-- Gregor ↔ Room -->
+          <line x1="240" y1="130" x2="340" y2="210" stroke="rgba(24,24,26,0.13)" stroke-width="1.5" marker-end="url(#arr)" />
+          <!-- Gregor ↔ Family -->
+          <line x1="240" y1="130" x2="130" y2="195" stroke="rgba(24,24,26,0.13)" stroke-width="1.5" marker-end="url(#arr)" />
+          <!-- Gregor ↔ Work -->
+          <line x1="240" y1="130" x2="175" y2="58" stroke="rgba(24,24,26,0.13)" stroke-width="1.5" marker-end="url(#arr)" />
+          <!-- Gregor ↔ Body -->
+          <line x1="240" y1="130" x2="330" y2="72" stroke="rgba(24,24,26,0.13)" stroke-width="1.5" marker-end="url(#arr)" />
+          <!-- Family ↔ Room -->
+          <line x1="130" y1="195" x2="340" y2="210" stroke="rgba(24,24,26,0.08)" stroke-width="1" />
+          <!-- Work ↔ Body -->
+          <line x1="175" y1="58" x2="330" y2="72" stroke="rgba(24,24,26,0.08)" stroke-width="1" />
+          <!-- Room ↔ Isolation -->
+          <line x1="340" y1="210" x2="400" y2="280" stroke="rgba(24,24,26,0.08)" stroke-width="1" marker-end="url(#arr)" />
+          <!-- Family ↔ Fear -->
+          <line x1="130" y1="195" x2="75" y2="268" stroke="rgba(24,24,26,0.08)" stroke-width="1" marker-end="url(#arr)" />
+
+          <!-- edge labels -->
+          <text x="268" y="182" font-size="9" font-family="system-ui" fill="rgba(24,24,26,0.32)" text-anchor="middle" transform="rotate(40,268,182)">confined to</text>
+          <text x="168" y="158" font-size="9" font-family="system-ui" fill="rgba(24,24,26,0.32)" text-anchor="middle" transform="rotate(-25,168,158)">supports</text>
+          <text x="196" y="82" font-size="9" font-family="system-ui" fill="rgba(24,24,26,0.32)" text-anchor="middle" transform="rotate(-8,196,82)">burdened by</text>
+          <text x="294" y="90" font-size="9" font-family="system-ui" fill="rgba(24,24,26,0.32)" text-anchor="middle" transform="rotate(12,294,90)">transformed</text>
+
+          <!-- CHARACTER nodes -->
+          <!-- Gregor Samsa — central -->
+          <circle cx="240" cy="130" r="36" fill="rgba(181,104,57,0.14)" stroke="#B56839" stroke-width="1.5" />
+          <text x="240" y="127" font-size="11.5" font-family="'Cormorant Garamond',Georgia,serif" font-weight="500" fill="#B56839" text-anchor="middle">Gregor</text>
+          <text x="240" y="141" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#B56839" text-anchor="middle">Samsa</text>
+
+          <!-- Father Samsa -->
+          <circle cx="98" cy="180" r="22" fill="rgba(181,104,57,0.07)" stroke="rgba(181,104,57,0.4)" stroke-width="1" />
+          <text x="98" y="177" font-size="9.5" font-family="'Cormorant Garamond',Georgia,serif" fill="#8a5535" text-anchor="middle">Father</text>
+          <text x="98" y="189" font-size="9.5" font-family="'Cormorant Garamond',Georgia,serif" fill="#8a5535" text-anchor="middle">Samsa</text>
+
+          <!-- Mother Samsa -->
+          <circle cx="155" cy="225" r="18" fill="rgba(181,104,57,0.07)" stroke="rgba(181,104,57,0.35)" stroke-width="1" />
+          <text x="155" y="223" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#8a5535" text-anchor="middle">Mother</text>
+          <text x="155" y="234" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#8a5535" text-anchor="middle">Samsa</text>
+
+          <!-- PLACE nodes -->
+          <!-- The Room -->
+          <rect x="306" y="185" width="68" height="40" rx="4" fill="rgba(122,158,135,0.1)" stroke="rgba(122,158,135,0.5)" stroke-width="1" />
+          <text x="340" y="207" font-size="9.5" font-family="'Cormorant Garamond',Georgia,serif" fill="#4a7a5a" text-anchor="middle">The Room</text>
+
+          <!-- THEME nodes -->
+          <!-- Work / obligation -->
+          <circle cx="175" cy="48" r="20" fill="rgba(138,122,174,0.1)" stroke="rgba(138,122,174,0.4)" stroke-width="1" />
+          <text x="175" y="46" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#5a4a8a" text-anchor="middle">Work &amp;</text>
+          <text x="175" y="57" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#5a4a8a" text-anchor="middle">Obligation</text>
+
+          <!-- Body / transformation -->
+          <circle cx="330" cy="62" r="22" fill="rgba(138,122,174,0.1)" stroke="rgba(138,122,174,0.4)" stroke-width="1" />
+          <text x="330" y="59" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#5a4a8a" text-anchor="middle">Body &amp;</text>
+          <text x="330" y="70" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#5a4a8a" text-anchor="middle">Form</text>
+
+          <!-- Isolation -->
+          <circle cx="405" cy="283" r="18" fill="rgba(138,122,174,0.07)" stroke="rgba(138,122,174,0.3)" stroke-width="1" />
+          <text x="405" y="286" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#5a4a8a" text-anchor="middle">Isolation</text>
+
+          <!-- Fear / family pressure -->
+          <circle cx="68" cy="272" r="18" fill="rgba(138,122,174,0.07)" stroke="rgba(138,122,174,0.3)" stroke-width="1" />
+          <text x="68" y="269" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#5a4a8a" text-anchor="middle">Family</text>
+          <text x="68" y="280" font-size="9" font-family="'Cormorant Garamond',Georgia,serif" fill="#5a4a8a" text-anchor="middle">Pressure</text>
+        </svg>
+        <span class="graph-redacted-note">Illustrative — internal scores not shown</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" />
+
+<!-- ── ABOUT ── -->
+<section id="about">
+  <div class="container">
+    <p class="section-label">About</p>
+    <div class="about-grid">
+      <div class="about-text">
+        <h2>Translation infrastructure for texts that resist automation.</h2>
+        <p>Dano Systems is a small team building context-aware translation tooling for literary and high-stakes texts. We work at the intersection of knowledge graph engineering, applied LLMs, and editorial craft.</p>
+        <p>The name comes from the Persian دانو — a word for knowledge, flow, and river. The work is about keeping meaning coherent across languages, chapters, and contexts.</p>
+      </div>
+      <div class="about-capabilities">
+        <div class="cap-item">
+          <span class="cap-num">01</span>
+          <span class="cap-text">Literary translation with persistent context — novels, story collections, long-form non-fiction</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-num">02</span>
+          <span class="cap-text">Context-aware localization pipelines for products with complex, evolving terminology</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-num">03</span>
+          <span class="cap-text">Editorial AI tooling — review surfaces, consistency checkers, translation memory systems</span>
+        </div>
+        <div class="cap-item">
+          <span class="cap-num">04</span>
+          <span class="cap-text">R&amp;D prototypes for publishers, localization agencies, and academic language labs</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="rule" style="border-color: rgba(24,24,26,0.06);" />
+
+<!-- ── CONTACT ── -->
+<section id="contact">
+  <div class="container">
+    <p class="section-label">Get in touch</p>
+    <div class="contact-grid">
+      <div class="contact-left">
+        <h2>Bring a hard translation problem.</h2>
+        <p>Describe the text, source and target languages, and what's made it difficult so far. I'll respond within a few days.</p>
+      </div>
+      <form id="contactForm">
+        <div class="form-row">
+          <div class="form-field">
+            <label for="fname">Name</label>
+            <input type="text" id="fname" name="name" autocomplete="name" required />
+          </div>
+          <div class="form-field">
+            <label for="femail">Email</label>
+            <input type="email" id="femail" name="email" autocomplete="email" required />
+          </div>
+        </div>
+        <div class="form-field">
+          <label for="ftype">Project type</label>
+          <select id="ftype" name="projectType">
+            <option value="">Select…</option>
+            <option value="literary">Literary translation</option>
+            <option value="localization">Localization pipeline</option>
+            <option value="editorial">Editorial AI tooling</option>
+            <option value="research">Research / prototype</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="flangs">Languages involved</label>
+          <input type="text" id="flangs" name="languages" placeholder="e.g. German → English, Persian" />
+        </div>
+        <div class="form-field">
+          <label for="fmsg">Project brief</label>
+          <textarea id="fmsg" name="message" placeholder="Tell me about the text and what you need." required></textarea>
+        </div>
+        <div class="form-submit">
+          <button type="submit" class="btn-send" id="sendBtn">Send inquiry</button>
+          <span class="form-status" id="formStatus"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <div class="footer-left">Dano Systems</div>
+  <div class="footer-right">Context-aware translation infrastructure for literary and long-form texts. &copy; 2025 Dano Systems.</div>
+</footer>
+
+<script>
+// ── Book selection ──
+function selectBook(slug, el) {
+  document.querySelectorAll('.book-card').forEach(c => c.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // Future: swap reader content per book. For now only metamorphosis has data.
+}
+
+// ── Reader data ──
+const EXCERPTS = {
+  opening: {
+    label: "Opening",
+    paragraphs: [
+      {
+        de: "Als Gregor Samsa eines Morgens aus unruhigen Träumen erwachte, fand er sich in seinem Bett zu einem ungeheuren Ungeziefer verwandelt. Er lag auf seinem panzerartig harten Rücken und sah, wenn er den Kopf ein wenig hob, seinen gewölbten, braunen, von bogenförmigen Versteifungen geteilten Bauch, auf dessen Höhe sich die Bettdecke, zum gänzlichen Niedergleiten bereit, kaum noch erhalten konnte. Seine vielen, im Vergleich zu seinem sonstigen Umfang kläglich dünnen Beine flimmerten ihm hilflos vor den Augen.",
+        en: "When Gregor Samsa awoke one morning from troubled dreams, he found himself transformed in his bed into a monstrous vermin. He lay on his armor-hard back and, if he lifted his head a little, saw his domed brown belly, divided into arched, rigid segments, atop which the quilt, ready to slide off completely, could barely maintain its hold. His many legs, pitifully thin in comparison to the rest of his bulk, flickered helplessly before his eyes.",
+        es: "Cuando Gregor Samsa se despertó una mañana de un sueño intranquilo, se encontró en su cama transformado en una monstruosa alimaña. Estaba tumbado sobre su espalda, dura como un caparazón, y, si levantaba un poco la cabeza, veía su vientre abombado, pardo, surcado por callosidades arqueadas, sobre cuya altura la colcha a duras penas podía sostenerse, a punto de resbalar por completo. Sus numerosas patas, lastimosamente delgadas en comparación con el resto de su tamaño, revoloteaban desamparadas ante sus ojos.",
+        fa: "وقتی گرگور زامسا یک روز صبح از خواب‌های آشفته بیدار شد، خود را در تختخوابش به موجود موذیِ هولناکی تبدیل‌ شده یافت. او به پشتِ زره‌مانند و سختش افتاده بود و اگر سرش را کمی بلند می‌کرد، شکم قهوه‌ای و گنبدی‌شکلش را می‌دید که با سفت‌شدگی‌های قوسی‌شکل تقسیم شده بود، شکمی که روی آن، پتو در حال سُر خوردن بود و به‌سختی سر جای خود مانده بود. پاهای بی‌شمارش، که در مقایسه با اندازه بقیه بدنش به‌طرز رقت‌باری نازک بودند، بی‌هدف جلوی چشمانش می‌لرزیدند.",
+        ja: "ある朝、グレゴール・ザムザが気がかりな夢から目を覚ますと、自分がベッドの上で一匹の巨大な虫に変身しているのに気がついた。彼は甲羅のように硬い背中を下にして横たわっており、頭を少し持ち上げると、弓状の硬い節で分かたれた、こんもりと丸い茶色い腹が見えた。布団はその盛り上がりにかろうじて引っかかっているだけで、今にもすっかりずり落ちそうだった。彼のその他の体の大きさに比べて、あまりにも情けないほど細い何本もの足が、目の前でどうすることもできずに頼りなくちらついていた。",
+        zh: "一天早晨，格里高尔·萨姆沙从不安的睡梦中醒来，发现自己在床上变成了一只巨大的虫子。他仰面躺着，背部硬如铠甲，稍稍抬起头，便能看见自己呈弧形隆起的棕色腹部，上面分为许多弓形的硬节，原先盖在腹部高处的被子眼看就要全滑落下来，勉强还算挂在上面。与他那庞大的身躯相比，他那许多细得可怜的腿在他眼前绝望地挥舞着。",
+        ar: "عندما استيقظ غريغور سامسا ذات صباح من أحلام مضطربة، وجد نفسه وقد تحول في سريره إلى حشرة نجسة هائلة. كان مستلقياً على ظهره الصلب الأشبه بدرع، وحين يرفع رأسه قليلاً، كان يرى بطنه البني المقبب، والمقسم بحواف مقوسة صلبة، والذي بالكاد استقر عليه الغطاء، وبدا مستعداً للانزلاق تماماً في أي لحظة. وكانت أرجله العديدة، الرفيعة بشكل يرثى له مقارنة بحجمه الإجمالي، تتخبط بلا حيلة أمام عينيه.",
+        it: "Quando Gregor Samsa si risvegliò una mattina da sogni inquieti, si trovò trasformato nel suo letto in un enorme insetto ripugnante. Giaceva sul suo dorso duro come una corazza e, se alzava un poco la testa, vedeva il suo ventre bruno, ricurvo, diviso da rinforzi arcuati, sulla cui sommità la coperta del letto, pronta a scivolare giù del tutto, fatica a mantenersi. Le sue numerose zampe, pietosamente sottili rispetto alla sua corporatura abituale, gli sfarfallavano impotenti davanti agli occhi."
+      },
+      {
+        de: "»Was ist mit mir geschehen?« dachte er. Es war kein Traum. Sein Zimmer, ein richtiges, nur etwas zu kleines Menschenzimmer, lag ruhig zwischen den vier wohlbekannten Wänden.",
+        en: '"What has happened to me?" he thought. It was no dream. His room, a proper, albeit somewhat overly small human room, lay peacefully between its four familiar walls.',
+        es: '—¿Qué me ha ocurrido? —pensó. No era un sueño. Su habitación, una verdadera habitación humana, aunque algo pequeña, reposaba en paz entre las cuatro paredes harto conocidas.',
+        fa: "او با خود اندیشید: «چه بلایی سرم آمده؟» این یک رویا نبود. اتاق او، یک اتاقِ واقعیِ انسان‌ها، هرچند کمی بیش از حد کوچک، میان چهار دیوار آشنا آرام گرفته بود.",
+        ja: "「僕に何が起きたのだろう？」と彼は思った。それは夢ではなかった。彼の部屋、少し小さすぎるきらいはあるが、まっとうな人間用の部屋が、見慣れた四つの壁の間に静かに横たわっていた。",
+        zh: "发生了什么事？这不是梦。他的房间，一个真正的、只是稍微嫌小的人类房间，安静地躺在这四面熟悉的墙壁之间。",
+        ar: 'فكر: "ماذا حدث لي؟" لم يكن حُلماً. كانت الغرفة، غرفته البشرية الحقيقية رغم صغرها بعض الشيء، قبعت بهدوء بين جدرانها الأربعة المألوفة.',
+        it: '«Cosa mi è successo?» pensò. Non era un sogno. La sua stanza, una stanza per esseri umani vera e propria, solo un po\' troppo piccola, riposava tranquilla fra le quattro pareti ben note.'
+      }
+    ]
+  },
+  weather: {
+    label: "The weather",
+    paragraphs: [
+      {
+        de: "Gregors Blick richtete sich dann zum Fenster, und das trübe Wetter – man hörte Regentropfen auf das Fensterblech aufschlagen – machte ihn ganz melancholisch. »Wie wäre es, wenn ich noch ein wenig weiterschliefe und alle Narrheiten vergäße,« dachte er, aber das war gänzlich undurchführbar.",
+        en: "Gregor\u2019s gaze then directed itself toward the window, and the dreary weather\u2014raindrops could be heard striking the metal window ledge\u2014made him quite melancholy. \u201cWhat if I slept a little longer and forgot all this foolishness,\u201d he thought, but this was entirely impracticable.",
+        es: "La mirada de Gregor se dirigió hacia la ventana, y el tiempo lluvioso —se oían las gotas de lluvia golpear el antepecho metálico de la ventana— le puso completamente melancólico. «¿Y si durmiera un poco más y olvidara todos estos disparates?», pensó, pero eso era del todo irrealizable.",
+        fa: "نگاه گرگور به سمت پنجره رفت، و آب‌وهوای تیره‌وتار – صدای قطرات باران بر لبه فلزی پنجره شنیده می‌شد – او را کاملاً غمگین کرد. «چه می‌شد اگر کمی بیشتر می‌خوابیدم و همه این حماقت‌ها را فراموش می‌کردم» فکر کرد، اما این کاملاً غیرعملی بود.",
+        ja: "グレゴールの視線は窓の方に向いた。陰鬱な天気—雨粒が窓の金属製の桟に当たる音が聞こえた—が、彼をひどく憂鬱な気分にさせた。「もう少し眠り続けて、こんな馬鹿げたことはみんな忘れてしまったらどうだろう」と彼は思ったが、それは全く実行不可能なことだった。",
+        zh: "格里高尔的目光随即转向窗户，阴沉的天气——雨点敲打着铁窗台的声音清晰可闻——使他感到一阵忧郁。\u201c如果我再睡一会儿，把这些荒唐事全都忘掉，那该多好，\u201d他想，但这完全行不通。",
+        ar: "ثم توجّه نظر غريغور نحو النافذة، وجعله الطقس الكئيب - إذ كان يُسمع دقُّ قطرات المطر على حافة النافذة المعدنية - يشعر بالكآبة تماماً. «وماذا لو نمت قليلاً أكثر ونسيت كل هذه الحماقات؟» ، فكّر في ذلك، غير أن هذا كان أمراً مستحيل التنفيذ كلياً.",
+        it: "Lo sguardo di Gregor si rivolse poi verso la finestra, e il tempo grigio – si sentivano le gocce di pioggia urtare il davanzale di metallo – lo rese del tutto malinconico. «E se dormissi ancora un po' e dimenticassi tutte queste sciocchezze?» pensò, ma era del tutto impraticabile."
+      }
+    ]
+  },
+  profession: {
+    label: "The profession",
+    paragraphs: [
+      {
+        de: "»Ach Gott«, dachte er, »was für einen anstrengenden Beruf hab ich gewählt! Tag für Tag auf der Reise. Die geschäftlichen Aufregungen sind viel größer als im eigentlichen Geschäft zu Hause, und außerdem ist mir noch diese Plage des Reisens auferlegt, die Sorgen um die Zuganschlüsse, das unregelmäßige, schlechte Essen, ein immer wechselnder, nie andauernder, nie herzlich werdender menschlicher Verkehr.«",
+        en: '"Oh God," he thought, "what an exhausting profession I\'ve chosen! Day in, day out on the road. The commercial anxieties are far greater than they are in the actual business at home, and on top of that I\'m burdened with this ordeal of traveling, the worry about train connections, the irregular, bad food, the constantly changing human contact that never lasts and never grows warm."',
+        es: '«Dios mío», pensó, «¡qué profesión tan agotadora he elegido! Viajando día tras día. Los trastornos del negocio son mucho mayores que en el propio negocio en casa, y además me cae encima esta plaga de los viajes, las preocupaciones por los enlaces de tren, la comida irregular y mala, el trato con personas que cambia continuamente, que nunca dura y nunca llega a ser cordial.»',
+        fa: "«خدایا» فکر کرد، «چه شغل خسته‌کننده‌ای انتخاب کرده‌ام! روز و شب در راه. نگرانی‌های تجاری خیلی بیشتر از کار واقعی در خانه است، و علاوه بر این، این عذاب سفر هم بر دوشم سنگینی می‌کند، نگرانی درباره ارتباطات قطار، غذای نامنظم و بد، تماس انسانی که دائماً تغییر می‌کند، هرگز دوام نمی‌آورد و هرگز صمیمی نمی‌شود.»",
+        ja: "「ああ、神様」と彼は思った。「なんという疲れる職業を選んでしまったんだろう！毎日毎日旅続き。商売上の心配は、家でやっている本来の仕事よりもずっと大きい。その上、この旅というやっかいな代物が押し付けられて、列車の乗り継ぎの心配、不規則でまずい食事、絶えず入れ替わる人付き合いで、長続きするものはなく、温かみが生まれることもない。」",
+        zh: "“天哪，”他想，“我选了一份多么累人的差事！出门在外，日复一日。商务上的烦心事远比在家坐店要多，而且还要承受这旅行的折磨——担心火车换乘，饮食不规律又难吃，与人交往总在不断变换，从不长久，也从不变得亲近。”",
+        ar: "قال في نفسه: «يا إلهي، ما أشق المهنة التي اخترتها! يوم بعد يوم في الطريق. الهموم التجارية أعظم بكثير مما هي في مقر العمل الحقيقي بالبيت، وفوق ذلك كله تقع علي هذه المصيبة في الترحال، والهمّ من ركوب القطارات، والأكل المتقطع السيئ، والمعاشرة البشرية المتغيرة دائماً التي لا تدوم ولا تصبح حميمة أبداً.»",
+        it: '«Oddio», pensò, «che professione stancante ho scelto! Viaggiare giorno dopo giorno. Le agitazioni commerciali sono ben più grandi che nell\'attività vera e propria a casa, e per di più mi tocca questa piaga dei viaggi, le preoccupazioni per le coincidenze dei treni, il cibo irregolare e cattivo, il contatto con le persone che cambia continuamente, non dura mai, non diventa mai cordiale.»'
+      }
+    ]
+  }
+};
+
+const LANG_LABELS = {
+  en: 'English', es: 'Spanish', fa: 'Persian', ja: 'Japanese',
+  zh: 'Chinese', ar: 'Arabic', it: 'Italian'
+};
+
+const RTL_LANGS = new Set(["fa", "ar"]);
+
+let currentLang = "en";
+let currentExcerpt = "opening";
+
+function renderReader() {
+  const data = EXCERPTS[currentExcerpt];
+  const srcPanel = document.getElementById("sourcePanel");
+  const tgtPanel = document.getElementById("targetPanel");
+  const tgtLabel = document.getElementById("targetLabel");
+
+  srcPanel.innerHTML = data.paragraphs.map(p => `<p>${p.de}</p>`).join("");
+  tgtPanel.innerHTML = data.paragraphs.map(p => `<p>${p[currentLang] || p.en}</p>`).join("");
+
+  const isRtl = RTL_LANGS.has(currentLang);
+  tgtPanel.setAttribute("dir", isRtl ? "rtl" : "ltr");
+  tgtLabel.textContent = LANG_LABELS[currentLang] || currentLang.toUpperCase();
+}
+
+document.getElementById("langPicker").addEventListener("click", (e) => {
+  const btn = e.target.closest(".lang-btn");
+  if (!btn) return;
+  currentLang = btn.dataset.lang;
+  document.querySelectorAll(".lang-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderReader();
+});
+
+document.getElementById("excerptTabs").addEventListener("click", (e) => {
+  const btn = e.target.closest(".excerpt-tab");
+  if (!btn) return;
+  currentExcerpt = btn.dataset.excerpt;
+  document.querySelectorAll(".excerpt-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderReader();
+});
+
+renderReader();
+
+// ── Contact form ──
+document.getElementById("contactForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById("sendBtn");
+  const status = document.getElementById("formStatus");
+  const form = e.target;
+
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  status.textContent = "";
+  status.className = "form-status";
+
+  const body = {
+    name: form.name.value.trim(),
+    email: form.email.value.trim(),
+    projectType: form.projectType.value,
+    languages: form.languages.value.trim(),
+    message: form.message.value.trim()
+  };
+
+  try {
+    const res = await fetch("/api/contact", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      status.textContent = "Sent — I'll be in touch soon.";
+      status.className = "form-status ok";
+      form.reset();
+    } else {
+      throw new Error("server");
+    }
+  } catch {
+    status.textContent = "Something went wrong. Email me directly at hello@dano.systems.";
+    status.className = "form-status err";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send inquiry";
+  }
+});
+</script>
+</body>
+</html>

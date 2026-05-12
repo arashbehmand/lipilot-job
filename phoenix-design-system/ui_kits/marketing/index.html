@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phoenix0 — applications that read the room</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: var(--leading-normal); -webkit-font-smoothing: antialiased; }
+  ul { list-style: none; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+
+  /* NAV */
+  nav.top { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--section-x); height: 64px; background: var(--nav-bg); backdrop-filter: blur(14px); border-bottom: 1px solid var(--line); }
+  nav .brand { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: -0.01em; }
+  nav .brand img { width: 28px; height: 28px; }
+  nav .brand b { font-weight: 600; }
+  nav .brand b span { color: var(--orange); }
+  nav .links { display: flex; align-items: center; gap: 28px; }
+  nav .links a { font-size: 14px; color: var(--ink-mid); font-weight: 400; transition: color 180ms; white-space: nowrap; }
+  nav .links a:hover { color: var(--ink); }
+  nav .cta { font-size: 14px; color: var(--ink); font-weight: 500; padding: 8px 0; }
+  nav .cta:hover { color: var(--orange); }
+  nav .signup { background: var(--orange); color: #fff; padding: 9px 18px; border-radius: var(--r-3); font-size: 14px; font-weight: 500; transition: background 180ms; white-space: nowrap; }
+  nav .signup:hover { background: var(--orange-deep); }
+
+  /* SECTIONS */
+  section { padding: var(--section-y) var(--section-x); }
+  .container { max-width: var(--container-max); margin: 0 auto; }
+  .rule { border-top: 1px solid var(--line); }
+
+  /* HERO */
+  #hero { padding-top: clamp(4rem, 9vw, 7.5rem); padding-bottom: clamp(3rem, 6vw, 5rem); position: relative; overflow: hidden; }
+  /* faint grid backdrop */
+  #hero::before { content:''; position:absolute; inset:0; background-image: linear-gradient(var(--line-faint) 1px, transparent 1px), linear-gradient(90deg, var(--line-faint) 1px, transparent 1px); background-size: 64px 64px; mask-image: radial-gradient(ellipse 75% 80% at 50% 30%, #000 30%, transparent 80%); pointer-events:none; }
+  #hero .container { position: relative; }
+  .eyebrow-row { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .eyebrow-row .dot { width: 6px; height: 6px; border-radius: 100px; background: var(--orange); }
+  .eyebrow-row .text { font-size: 12px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--orange); }
+  .hero h1 { font-size: var(--t-hero); font-weight: 600; line-height: 1.02; letter-spacing: -0.025em; color: var(--ink); max-width: 17ch; text-wrap: balance; }
+  .hero h1 .accent { color: var(--orange); }
+  .hero .sub { margin-top: 32px; font-size: clamp(1rem, 1.4vw, 1.18rem); color: var(--ink-mid); max-width: 52ch; line-height: 1.6; text-wrap: pretty; font-weight: 400; }
+  .hero .actions { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+  .btn-primary { display: inline-flex; align-items: center; gap: 10px; background: var(--orange); color: #fff; padding: 14px 26px; border-radius: var(--r-3); font-size: 15px; font-weight: 500; letter-spacing: -0.005em; transition: background 180ms, transform 180ms; white-space: nowrap; }
+  .btn-primary:hover { background: var(--orange-deep); transform: translateY(-1px); }
+  .btn-secondary { display: inline-flex; align-items: center; gap: 8px; padding: 14px 22px; border: 1px solid var(--line-strong); border-radius: var(--r-3); color: var(--ink); font-size: 15px; font-weight: 500; transition: border-color 180ms, color 180ms; white-space: nowrap; }
+  .btn-secondary:hover { border-color: var(--ink); }
+  .btn-ghost { display: inline-flex; align-items: center; gap: 8px; color: var(--blue); font-size: 14px; font-weight: 500; padding: 8px 12px; transition: color 180ms; }
+  .btn-ghost svg { transition: transform 180ms; }
+  .btn-ghost:hover { color: var(--blue-deep); }
+  .btn-ghost:hover svg { transform: translateX(3px); }
+
+  .hero-sig { display: flex; align-items: center; gap: 24px; margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .hero-sig .label { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); letter-spacing: 0.04em; text-transform: uppercase; }
+  .hero-sig .stat { font-size: 14px; color: var(--ink-mid); }
+  .hero-sig .stat b { color: var(--ink); font-weight: 600; }
+
+  /* HOW IT WORKS */
+  .section-label { display: flex; align-items: center; gap: 12px; font-family: var(--mono); font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-mid); margin-bottom: 48px; }
+  .section-label::before { content:''; width: 24px; height: 1px; background: var(--ink); }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 32px; }
+  .step { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; border-top: 2px solid var(--ink); }
+  .step .num { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--orange); letter-spacing: 0.04em; }
+  .step .ttl { font-size: 1.1rem; font-weight: 600; color: var(--ink); line-height: 1.3; }
+  .step .body { font-size: 14.5px; color: var(--ink-mid); line-height: 1.6; }
+
+  /* WHAT IT DOES */
+  #features { background: var(--bg-2); }
+  #features h2 { font-size: clamp(1.8rem, 3.8vw, 3rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.025em; color: var(--ink); max-width: 22ch; text-wrap: balance; margin-bottom: 16px; }
+  #features h2 .accent { color: var(--orange); }
+  #features .lede { color: var(--ink-mid); font-size: 1.05rem; max-width: 56ch; line-height: 1.65; margin-bottom: 56px; }
+  .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r-2); overflow: hidden; }
+  .feat { background: var(--bg); padding: 32px; display: flex; flex-direction: column; gap: 14px; transition: background 180ms; }
+  .feat:hover { background: var(--orange-faint); }
+  .feat .ic-wrap { width: 36px; height: 36px; border-radius: var(--r-2); background: var(--orange-soft); color: var(--orange-deep); display: flex; align-items: center; justify-content: center; }
+  .feat .ic-wrap.blue { background: var(--blue-soft); color: var(--blue-deep); }
+  .feat .ic-wrap svg { width: 18px; height: 18px; }
+  .feat .ttl { font-size: 1.1rem; font-weight: 600; color: var(--ink); }
+  .feat .body { font-size: 14px; color: var(--ink-mid); line-height: 1.6; }
+
+  /* WORKSPACE PREVIEW */
+  #shot { padding-top: 0; }
+  .shot-frame { max-width: var(--container-max); margin: 0 auto; padding: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-3); box-shadow: var(--shadow-card); }
+  .shot-frame img { width: 100%; height: auto; display: block; border-radius: var(--r-2); }
+  .shot-cap { max-width: var(--container-max); margin: 24px auto 0; padding: 0 var(--section-x); font-size: 13px; color: var(--ink-soft); text-align: center; font-family: var(--mono); letter-spacing: 0.04em; }
+
+  /* PRICING */
+  #pricing h2 { font-size: clamp(1.8rem, 3.8vw, 2.8rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); margin-bottom: 16px; max-width: 24ch; text-wrap: balance; }
+  #pricing h2 .accent { color: var(--orange); }
+  #pricing .lede { color: var(--ink-mid); margin-bottom: 56px; max-width: 54ch; line-height: 1.65; }
+  .plans { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .plan { background: var(--bg); padding: 32px 28px; display: flex; flex-direction: column; gap: 18px; border: 1px solid var(--line); border-radius: var(--r-3); transition: border-color 180ms; }
+  .plan:hover { border-color: var(--line-strong); }
+  .plan.feat { border-color: var(--orange); position: relative; box-shadow: var(--shadow-soft); }
+  .plan.feat::before { content: 'Most popular'; position: absolute; top: -10px; left: 28px; background: var(--orange); color: #fff; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: var(--r-1); letter-spacing: 0.02em; }
+  .plan .name { font-size: 1.25rem; font-weight: 600; color: var(--ink); }
+  .plan .price { font-size: 2.6rem; font-weight: 600; color: var(--ink); line-height: 1; letter-spacing: -0.02em; }
+  .plan .price small { font-size: 14px; color: var(--ink-mid); margin-left: 4px; font-weight: 400; }
+  .plan .body { font-size: 14px; color: var(--ink-mid); line-height: 1.55; }
+  .plan ul.inc { display: flex; flex-direction: column; gap: 10px; padding: 18px 0; border-top: 1px solid var(--line); }
+  .plan ul.inc li { font-size: 14px; color: var(--ink-mid); line-height: 1.5; padding-left: 22px; position: relative; }
+  .plan ul.inc li::before { content: ''; position: absolute; left: 2px; top: 7px; width: 12px; height: 6px; border-left: 1.5px solid var(--orange); border-bottom: 1.5px solid var(--orange); transform: rotate(-45deg); }
+  .plan .cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; font-size: 14px; border-radius: var(--r-3); font-weight: 500; transition: all 180ms; margin-top: auto; }
+  .plan .cta.primary { background: var(--orange); color: #fff; }
+  .plan .cta.primary:hover { background: var(--orange-deep); }
+  .plan .cta.ghost { border: 1px solid var(--line-strong); color: var(--ink); }
+  .plan .cta.ghost:hover { border-color: var(--ink); }
+
+  /* FAQ */
+  #faq { padding-top: 0; }
+  .faq-list { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+  .faq-item { border-bottom: 1px solid var(--line); padding: 22px 0; cursor: pointer; }
+  .faq-item .top { display: grid; grid-template-columns: 1fr 24px; gap: 24px; align-items: center; }
+  .faq-item .q { font-size: 1.05rem; font-weight: 500; color: var(--ink); line-height: 1.4; }
+  .faq-item .toggle { width: 24px; height: 24px; border: 1px solid var(--line-strong); border-radius: 100px; display: flex; align-items: center; justify-content: center; color: var(--ink); transition: all 180ms; flex-shrink: 0; }
+  .faq-item .toggle::before, .faq-item .toggle::after { content: ''; position: absolute; width: 10px; height: 1.5px; background: currentColor; border-radius: 1px; }
+  .faq-item .toggle::after { transform: rotate(90deg); transition: transform 220ms var(--ease-out); }
+  .faq-item.open .toggle { background: var(--orange); border-color: var(--orange); color: #fff; }
+  .faq-item.open .toggle::after { transform: rotate(0); }
+  .faq-item .a { font-size: 14.5px; color: var(--ink-mid); line-height: 1.65; padding-top: 14px; max-width: 70ch; display: none; }
+  .faq-item.open .a { display: block; }
+
+  /* CONTACT (dark) */
+  #contact { background: var(--surface-dark); color: #fff; padding: clamp(5rem, 9vw, 8rem) var(--section-x); }
+  #contact .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; max-width: var(--container-max); margin: 0 auto; }
+  @media (max-width: 760px) { #contact .grid { grid-template-columns: 1fr; gap: 32px; } }
+  #contact .section-label { color: rgba(255,255,255,0.55); }
+  #contact .section-label::before { background: var(--orange); }
+  #contact h2 { font-size: clamp(1.8rem, 3.8vw, 2.8rem); font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; color: #fff; max-width: 18ch; }
+  #contact h2 .accent { color: var(--orange); }
+  #contact .body { color: rgba(255,255,255,0.6); margin-top: 18px; max-width: 44ch; line-height: 1.65; font-size: 15px; }
+  #contact .channels { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+  #contact .channels a { display: flex; align-items: center; gap: 12px; color: rgba(255,255,255,0.85); font-size: 14px; transition: color 180ms; }
+  #contact .channels a:hover { color: var(--orange); }
+  #contact .channels svg { width: 16px; height: 16px; opacity: 0.7; }
+  #contact form { display: flex; flex-direction: column; gap: 14px; }
+  #contact .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #contact label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-bottom: 6px; display: block; }
+  #contact input, #contact select, #contact textarea { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--r-2); padding: 12px 14px; font-family: var(--sans); font-size: 14px; color: #fff; outline: none; transition: border-color 180ms, background 180ms; }
+  #contact input::placeholder, #contact textarea::placeholder { color: rgba(255,255,255,0.30); }
+  #contact input:focus, #contact select:focus, #contact textarea:focus { border-color: var(--orange); background: rgba(255,255,255,0.06); }
+  #contact textarea { min-height: 120px; resize: vertical; }
+  #contact button[type="submit"] { background: var(--orange); color: #fff; padding: 13px 22px; border-radius: var(--r-3); font-size: 14px; font-weight: 500; align-self: flex-start; transition: background 180ms, transform 180ms; }
+  #contact button[type="submit"]:hover { background: var(--orange-deep); transform: translateY(-1px); }
+  #contact .feedback { font-size: 13px; color: var(--orange); display: none; }
+  #contact .feedback.shown { display: block; }
+
+  /* FOOTER */
+  footer { background: var(--surface-dark); color: rgba(255,255,255,0.55); padding: 32px var(--section-x); border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 13px; }
+  footer .word { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.92); }
+  footer .word img { width: 22px; height: 22px; }
+  footer .right { font-size: 12.5px; max-width: 56ch; text-align: right; line-height: 1.5; }
+  @media (max-width: 600px) { footer .right { text-align: left; } }
+</style>
+</head>
+<body data-screen-label="Marketing — landing">
+  <!-- NAV -->
+  <nav class="top">
+    <a class="brand" href="#"><img src="../../assets/phoenix-logo.png" alt=""><b>phoenix<span>0</span></b></a>
+    <ul class="links">
+      <li><a href="#how">How it works</a></li>
+      <li><a href="#features">Capabilities</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="#contact">Contact</a></li>
+      <li><a href="../webapp/index.html" class="cta">Sign in</a></li>
+      <li><a href="../webapp/index.html" class="signup">Get started</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero" data-screen-label="Hero">
+    <div class="container">
+      <div class="eyebrow-row">
+        <span class="dot"></span>
+        <span class="text">Job applications, with context</span>
+      </div>
+      <h1 class="hero">Know who's hiring you.<br><span class="accent">Apply like you mean it.</span></h1>
+      <p class="sub">Phoenix0 reads the company, the role, and your history — then drafts the resume, the cover letter, and the follow-up emails as a single coherent application.</p>
+      <div class="actions">
+        <a class="btn-primary" href="../webapp/index.html">Start your first application <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn-secondary" href="#how">See how it works</a>
+      </div>
+      <div class="hero-sig">
+        <span class="label">Made for</span>
+        <span class="stat"><b>Senior IC</b> &amp; engineering managers</span>
+        <span class="stat"><b>Bootcamp grads</b> writing their first 50 applications</span>
+        <span class="stat"><b>People who've quietly been looking</b> for six months</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="rule"></div>
+
+  <!-- HOW IT WORKS -->
+  <section id="how" data-screen-label="How it works">
+    <div class="container">
+      <div class="section-label">How it works</div>
+      <div class="steps">
+        <div class="step"><div class="num">01</div><div class="ttl">Drop in the role</div><div class="body">Paste a job description, link, or LinkedIn post. Phoenix0 reads the company, the team, and the actual ask.</div></div>
+        <div class="step"><div class="num">02</div><div class="ttl">Bring your context</div><div class="body">Your base resume, the recruiter you've talked to, the version you sent last week — all become inputs.</div></div>
+        <div class="step"><div class="num">03</div><div class="ttl">Generate with memory</div><div class="body">Cover letter, tailored resume, application form answers — written knowing what you've already said elsewhere.</div></div>
+        <div class="step"><div class="num">04</div><div class="ttl">Review &amp; send</div><div class="body">Each draft shows the inputs it used so you know what to edit. Send when it sounds like you.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPABILITIES -->
+  <section id="features" data-screen-label="Capabilities">
+    <div class="container">
+      <div class="section-label" style="color: var(--orange);">Capabilities</div>
+      <h2>Six tools, <span class="accent">one</span> shared brain.</h2>
+      <p class="lede">Most application tools forget between drafts. Phoenix0 is one workspace per job — every output reads the others, so the cover letter knows what's on the resume and the email response knows what was promised in the interview.</p>
+      <div class="feat-grid">
+        <div class="feat">
+          <div class="ic-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3 6-6"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.56.93 6.18 2.46"/></svg></div>
+          <div class="ttl">Career consultant</div>
+          <div class="body">Reads the role, your resume, and tells you whether to bother applying — and what to emphasize if you do.</div>
+        </div>
+        <div class="feat">
+          <div class="ic-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+          <div class="ttl">Tailored resume</div>
+          <div class="body">Reorders, reweights, and prunes your base resume against this specific role's hard requirements.</div>
+        </div>
+        <div class="feat">
+          <div class="ic-wrap blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M4 9h16M9 13h7M9 16h5"/></svg></div>
+          <div class="ttl">Cover letter</div>
+          <div class="body">Familiar voice, new role. References past conversations and the version of you that fits this team.</div>
+        </div>
+        <div class="feat">
+          <div class="ic-wrap blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 5h18M3 12h18M3 19h12"/></svg></div>
+          <div class="ttl">Application form answers</div>
+          <div class="body">"Why us?" "What's a project you're proud of?" — drafted knowing what's already on your resume, in your tone.</div>
+        </div>
+        <div class="feat">
+          <div class="ic-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 6l-10 7L2 6"/><path d="M2 6h20v12H2z"/></svg></div>
+          <div class="ttl">Email &amp; LinkedIn replies</div>
+          <div class="body">Recruiter messages drafted with the thread history, the role context, and a calibrated level of warmth.</div>
+        </div>
+        <div class="feat">
+          <div class="ic-wrap blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div>
+          <div class="ttl">Interview prep</div>
+          <div class="body">A briefing on what they care about, what they probably won't ask, and the three things to lead with.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- WORKSPACE PREVIEW -->
+  <section id="shot" style="padding-top: 32px;" data-screen-label="Workspace screenshot">
+    <div class="shot-frame">
+      <img src="../../assets/screenshot-current-session.png" alt="Phoenix0 workspace — required resources and generated artifacts">
+    </div>
+    <p class="shot-cap">$ phoenix0/workspace · J&amp;J — Fintech Unk — Tact — Lead ML Engineer</p>
+  </section>
+
+  <div class="rule" style="margin-top: var(--section-y);"></div>
+
+  <!-- PRICING -->
+  <section id="pricing" data-screen-label="Pricing">
+    <div class="container">
+      <div class="section-label">Pricing</div>
+      <h2>Pay for the <span class="accent">memory</span>, not the AI.</h2>
+      <p class="lede">Generation is cheap. Holding context across applications, tracking the recruiters you've spoken to, and building a private index of your career — that's the work.</p>
+      <div class="plans">
+        <div class="plan">
+          <div class="name">Free</div>
+          <div class="price">$0<small>/forever</small></div>
+          <div class="body">Test the workflow on a single role.</div>
+          <ul class="inc">
+            <li>1 active application</li>
+            <li>3 generated drafts / week</li>
+            <li>Resume, cover letter, form answers</li>
+            <li>Browser only</li>
+          </ul>
+          <a href="../webapp/index.html" class="cta ghost">Sign up free →</a>
+        </div>
+        <div class="plan feat">
+          <div class="name">Searcher</div>
+          <div class="price">$14<small>/month</small></div>
+          <div class="body">For an active job search — typically 4–10 applications a week.</div>
+          <ul class="inc">
+            <li>Unlimited applications</li>
+            <li>All six generators</li>
+            <li>Email + LinkedIn response drafting</li>
+            <li>Job-monitoring alerts (3 saved searches)</li>
+            <li>Telegram bot</li>
+          </ul>
+          <a href="#contact" class="cta primary">Start 14-day trial →</a>
+        </div>
+        <div class="plan">
+          <div class="name">Career</div>
+          <div class="price">$29<small>/month</small></div>
+          <div class="body">For people who interview as a habit, not a sprint.</div>
+          <ul class="inc">
+            <li>Everything in Searcher</li>
+            <li>Unlimited saved searches</li>
+            <li>Pipeline analytics across applications</li>
+            <li>Priority research providers</li>
+            <li>Export to PDF / DOCX / ATS</li>
+          </ul>
+          <a href="#contact" class="cta ghost">Get in touch →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section id="faq" style="padding-top: 96px;" data-screen-label="FAQ">
+    <div class="container">
+      <div class="section-label">Frequently asked</div>
+      <div class="faq-list" id="faq-list">
+        <div class="faq-item open"><div class="top"><div class="q">Does Phoenix0 train on my resume?</div><button class="toggle"></button></div><div class="a">No. Your inputs are scoped to your account and used only to generate your own drafts. We do not use your data to train shared models.</div></div>
+        <div class="faq-item"><div class="top"><div class="q">Which AI do you use?</div><button class="toggle"></button></div><div class="a">A mix of frontier and open models, chosen per task. Drafting work runs on long-context models so the workspace's full history is in view; classification and matching run on smaller, faster ones. You can pick a research provider per session.</div></div>
+        <div class="faq-item"><div class="top"><div class="q">Can I export drafts to send through other tools?</div><button class="toggle"></button></div><div class="a">Yes — every draft exports to PDF, DOCX, and plain text. The Career plan also outputs ATS-friendly resume formats.</div></div>
+        <div class="faq-item"><div class="top"><div class="q">Is there a Telegram bot?</div><button class="toggle"></button></div><div class="a">Yes. The Telegram bot mirrors the web app's flows. The web app and the bot share a session, so you can start in one and finish in the other.</div></div>
+        <div class="faq-item"><div class="top"><div class="q">Will Phoenix0 apply to jobs for me automatically?</div><button class="toggle"></button></div><div class="a">No. Applications that read the room are written, not blasted. Phoenix0 will surface matches and have drafts ready, but you press send.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact" data-screen-label="Contact">
+    <div class="grid">
+      <div>
+        <div class="section-label">Talk to us</div>
+        <h2 style="margin-top: 16px;">Stuck on a hard <span class="accent">application</span>?</h2>
+        <p class="body">Tell us about the role you're chasing or the workflow you wish existed. We read every message — usually within a day.</p>
+        <div class="channels">
+          <a href="mailto:hello@phoenix0.online"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 6l-10 7L2 6"/><path d="M2 6h20v12H2z"/></svg>hello@phoenix0.online</a>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21.426 1.135c-.31-.243-.737-.293-1.094-.13L1.738 9.466c-.42.183-.696.589-.704 1.043s.255.872.667 1.07l4.488 2.158 2.402 7.275c.066.197.207.366.398.46.155.077.34.108.521.077.184-.03.35-.115.482-.243l3.16-3.045 4.69 3.5a1.198 1.198 0 0 0 1.84-.73L22.985 2.31a1.2 1.2 0 0 0-1.559-1.175z"/></svg>Telegram bot @phoenix0_bot</a>
+          <a href="https://github.com/arashbehmand"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-2.18c-3.2.7-3.87-1.37-3.87-1.37-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.69 1.25 3.34.96.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.16 1.18a10.94 10.94 0 0 1 5.74 0c2.2-1.49 3.16-1.18 3.16-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>github.com/arashbehmand</a>
+        </div>
+      </div>
+      <form onsubmit="event.preventDefault(); document.getElementById('feedback').classList.add('shown'); this.reset();">
+        <div class="row2">
+          <div><label>Name</label><input required placeholder="Your name"></div>
+          <div><label>Email</label><input required type="email" placeholder="you@company.com"></div>
+        </div>
+        <div><label>What's it about</label>
+          <select>
+            <option>Trial signup</option>
+            <option>Career plan inquiry</option>
+            <option>Press / partnership</option>
+            <option>Bug report</option>
+            <option>Something else</option>
+          </select>
+        </div>
+        <div><label>Tell us more</label><textarea placeholder="Optional, but the more context the better."></textarea></div>
+        <button type="submit">Send →</button>
+        <div class="feedback" id="feedback">Thanks — we'll be in touch within a day.</div>
+      </form>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="word"><img src="../../assets/phoenix-logo.png" alt="">phoenix0</div>
+    <div class="right">A job-search workspace built on memory, not magic. © 2026 Phoenix0.</div>
+  </footer>
+
+  <script>
+    document.querySelectorAll('.faq-item .top').forEach(top => {
+      top.addEventListener('click', () => top.parentElement.classList.toggle('open'));
+    });
+  </script>
+</body>
+</html>

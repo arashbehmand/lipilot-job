@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Paper & Ink</title>
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { padding: 20px; gap: 12px; }
+  .swatches { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+  .sw { display: flex; flex-direction: column; gap: 6px; }
+  .sw .chip { aspect-ratio: 1.45 / 1; border-radius: 3px; border: 1px solid var(--ink-dim); }
+  .name { font-size: 11px; color: var(--ink); font-weight: 500; letter-spacing: 0.02em; }
+  .hex  { font-family: var(--mono); font-size: 10.5px; color: var(--ink-mid); }
+</style>
+</head>
+<body>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#F4EFE3"></div><div class="name">paper</div><div class="hex">#F4EFE3</div></div>
+    <div class="sw"><div class="chip" style="background:#FBF7EC"></div><div class="name">paper-2</div><div class="hex">#FBF7EC</div></div>
+    <div class="sw"><div class="chip" style="background:#FFFFFF"></div><div class="name">paper-3</div><div class="hex">#FFFFFF</div></div>
+    <div class="sw"><div class="chip" style="background:#18171A; border-color:#18171A"></div><div class="name">ink</div><div class="hex">#18171A</div></div>
+    <div class="sw"><div class="chip" style="background:rgba(24,23,26,0.55)"></div><div class="name">ink-mid</div><div class="hex">55%</div></div>
+    <div class="sw"><div class="chip" style="background:rgba(24,23,26,0.32)"></div><div class="name">ink-soft</div><div class="hex">32%</div></div>
+    <div class="sw"><div class="chip" style="background:rgba(24,23,26,0.08)"></div><div class="name">ink-dim</div><div class="hex">8%</div></div>
+  </div>
+</body>
+</html>

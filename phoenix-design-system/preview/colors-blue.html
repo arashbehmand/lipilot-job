@@ -1,0 +1,20 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css"><style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);padding:20px;font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .col{display:flex;flex-direction:column;gap:8px}
+  .label{font-family:var(--mono);font-size:11px;color:var(--ink-soft);letter-spacing:0.04em;text-transform:uppercase}
+  .swatch{width:100px;height:64px;border-radius:4px;border:1px solid var(--line);position:relative;overflow:hidden}
+  .swatch .name{position:absolute;left:8px;bottom:6px;font-family:var(--mono);font-size:10px;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
+  .swatch.lt .name{color:var(--ink);text-shadow:none}
+  .hex{font-family:var(--mono);font-size:11px;color:var(--ink-mid);margin-top:2px}
+</style></head><body>
+    <div class="col">
+      <div class="row">
+        <div class="col"><div class="swatch" style="background:#1D4FBF"><span class="name">blue-deep</span></div><span class="hex">#1D4FBF · hover</span></div>
+        <div class="col"><div class="swatch" style="background:#2563EB"><span class="name">blue</span></div><span class="hex">#2563EB · link</span></div>
+        <div class="col"><div class="swatch" style="background:#4A8AFF"><span class="name">blue-bright</span></div><span class="hex">#4A8AFF</span></div>
+        <div class="col"><div class="swatch lt" style="background:#E0EBFF"><span class="name">blue-soft</span></div><span class="hex">#E0EBFF · tint</span></div>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--ink-mid);max-width:60ch">Secondary brand — the briefcase. Used for links, informational tints, and as a calmer alternative when orange would be too loud.</div>
+    </div></body></html>

@@ -1,0 +1,47 @@
+/* preview/_card.css — shared chrome for design-system tab cards */
+@import url('../colors_and_type.css');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  width: 100%;
+  min-height: 100%;
+}
+
+body {
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.row { display: flex; align-items: center; gap: 16px; }
+.col { display: flex; flex-direction: column; gap: 12px; }
+.grid { display: grid; gap: 1px; background: var(--ink-dim); border: 1px solid var(--ink-dim); border-radius: 3px; overflow: hidden; }
+.cell { background: var(--paper); padding: 14px 16px; }
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ember);
+  font-weight: 500;
+}
+.meta { font-size: 11.5px; color: var(--ink-mid); letter-spacing: 0.02em; }
+.mono { font-family: var(--mono); font-size: 11px; color: var(--ink-mid); }
+
+.swatch {
+  width: 100%;
+  border-radius: 3px;
+  border: 1px solid var(--ink-dim);
+  position: relative;
+}
+
+.serif { font-family: var(--serif); }
+.sans  { font-family: var(--sans); }

@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phoenix0 — workspace</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  ul { list-style: none; }
+  button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input, textarea, select { font: inherit; color: inherit; }
+
+  .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+  /* SIDEBAR */
+  aside { border-right: 1px solid var(--line); padding: 22px 18px; display: flex; flex-direction: column; gap: 28px; background: var(--bg); position: sticky; top: 0; height: 100vh; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 22px; font-weight: 500; }
+  .brand img { width: 26px; height: 26px; }
+
+  nav.primary { display: flex; flex-direction: column; gap: 2px; }
+  nav.primary a { display: flex; align-items: center; gap: 12px; padding: 9px 12px; border-radius: 3px; font-size: 13.5px; color: var(--ink-mid); transition: background 180ms, color 180ms; cursor: pointer; }
+  nav.primary a:hover { background: var(--line-faint); color: var(--ink); }
+  nav.primary a.active { background: var(--ink); color: var(--bg); }
+  nav.primary a.active svg { color: var(--bg); }
+  nav.primary svg { width: 16px; height: 16px; color: var(--ink-soft); flex-shrink: 0; }
+
+  .session-block { display: flex; flex-direction: column; gap: 10px; }
+  .session-block .label { font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
+  .session-picker { border: 1px solid var(--line); border-radius: 3px; padding: 9px 12px; font-size: 13px; color: var(--ink); display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; transition: border-color 180ms; background: var(--bg-2); }
+  .session-picker:hover { border-color: var(--ink-soft); }
+  .session-picker .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .session-picker svg { width: 12px; height: 12px; color: var(--ink-soft); flex-shrink: 0; }
+  .session-actions { display: flex; gap: 6px; }
+  .btn-mini { flex: 1; padding: 7px 10px; font-size: 12px; border: 1px solid var(--line); border-radius: 3px; color: var(--ink-mid); background: var(--bg); transition: all 180ms; }
+  .btn-mini:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .btn-mini.solid { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .btn-mini.solid:hover { opacity: 0.88; }
+
+  aside .foot { margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink-soft); padding-top: 16px; border-top: 1px solid var(--line); }
+  aside .foot button { color: var(--ink-mid); transition: color 180ms; }
+  aside .foot button:hover { color: var(--orange); }
+
+  /* MAIN */
+  main { padding: 28px 40px 80px; max-width: 1200px; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+  .topbar h1 { font-family: var(--serif); font-size: 1.8rem; font-weight: 400; color: var(--ink); letter-spacing: -0.005em; }
+  .topbar .out { font-size: 13px; color: var(--ink-mid); border: 1px solid var(--line); padding: 7px 14px; border-radius: 100px; transition: all 180ms; cursor: pointer; }
+  .topbar .out:hover { color: var(--orange); border-color: var(--orange); }
+
+  /* SESSION HEADER */
+  .session-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 8px; gap: 24px; }
+  .session-head h2 { font-family: var(--serif); font-size: 2rem; font-weight: 400; color: var(--ink); line-height: 1.15; letter-spacing: -0.005em; }
+  .session-head .actions { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn-rename { font-size: 13px; color: var(--ink-mid); padding: 7px 14px; border-radius: 100px; border: 1px solid var(--line); transition: all 180ms; }
+  .btn-rename:hover { color: var(--ink); border-color: var(--ink-soft); }
+  .btn-delete { font-size: 13px; color: var(--danger); padding: 7px 14px; border-radius: 100px; border: 1px solid rgba(160,57,46,0.30); transition: all 180ms; }
+  .btn-delete:hover { background: var(--danger-soft); border-color: var(--danger); }
+  .session-meta { font-size: 12px; color: var(--ink-soft); letter-spacing: 0.04em; margin-bottom: 32px; }
+
+  /* SECTIONS */
+  .section { margin-bottom: 44px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .section-head h3 { font-family: var(--serif); font-size: 1.25rem; font-weight: 500; color: var(--ink); }
+  .section-head .hint { font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-soft); }
+
+  /* RESOURCE / ARTIFACT ROWS */
+  .row-list { display: flex; flex-direction: column; }
+  .row { display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 14px; padding: 14px 4px; border-bottom: 1px solid var(--line); transition: background 180ms; }
+  .row:hover { background: var(--line-faint); }
+  .row .chev { width: 14px; height: 14px; color: var(--ink-soft); cursor: pointer; transition: transform 180ms; }
+  .row.open .chev { transform: rotate(90deg); }
+  .row .name { font-size: 14px; color: var(--ink); display: flex; align-items: center; gap: 12px; }
+  .row .name .v { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.04em; }
+  .row .name .from { font-size: 10.5px; padding: 3px 8px; border-radius: 100px; background: var(--blue-soft); color: var(--blue); letter-spacing: 0.02em; }
+  .row .right { display: flex; align-items: center; gap: 14px; }
+  .row .status { display: flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: 0.04em; }
+  .row .status.ok { color: var(--positive); }
+  .row .status.miss { color: var(--ink-soft); }
+  .row .status .dot { width: 6px; height: 6px; border-radius: 100px; background: currentColor; }
+  .row .kind { font-size: 11px; color: var(--ink-mid); padding: 3px 8px; border: 1px solid var(--line); border-radius: 2px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .row .stamp { font-family: var(--mono); font-size: 11.5px; color: var(--ink-soft); }
+  .row .icon-btn { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink-soft); border-radius: 100px; transition: all 180ms; }
+  .row .icon-btn:hover { color: var(--orange); background: var(--orange-soft); }
+  .row .gen { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; background: var(--orange); color: #fff; border-radius: 100px; transition: all 180ms; }
+  .row .gen:hover { background: var(--orange-deep); transform: rotate(15deg); }
+  .row .gen svg { width: 14px; height: 14px; }
+  .row.expanded { background: var(--bg-2); }
+  .row-body { grid-column: 2 / -1; padding: 12px 0 4px; font-size: 13px; color: var(--ink-mid); line-height: 1.65; display: none; }
+  .row.open .row-body { display: block; }
+
+  /* INLINE INPUT (when adding context) */
+  .inline-input { padding: 10px 12px; border: 1px solid var(--orange); background: var(--bg-2); border-radius: 3px; font-size: 13px; outline: none; width: 100%; }
+  .inline-input:focus { border-color: var(--orange-deep); }
+
+  /* DRAFT PREVIEW (artifact body when expanded) */
+  .draft { background: var(--bg); border: 1px solid var(--line); border-radius: 3px; padding: 22px 24px; font-family: var(--serif); font-size: 16px; line-height: 1.7; color: var(--ink); margin-top: 6px; max-height: 280px; overflow: hidden; position: relative; }
+  .draft::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 60px; background: linear-gradient(to bottom, transparent, var(--bg)); pointer-events: none; }
+  .draft p + p { margin-top: 14px; }
+  .draft strong { font-weight: 500; }
+  .draft-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 10px; }
+  .draft-foot .src { font-size: 11.5px; color: var(--ink-soft); letter-spacing: 0.04em; }
+  .draft-foot .src em { font-style: normal; color: var(--orange); margin: 0 4px; }
+  .draft-foot .acts { display: flex; gap: 6px; }
+  .btn-text { font-size: 12.5px; color: var(--ink-mid); padding: 6px 12px; border-radius: 100px; transition: all 180ms; }
+  .btn-text:hover { color: var(--ink); background: var(--line-faint); }
+  .btn-text.primary { color: var(--bg); background: var(--ink); }
+  .btn-text.primary:hover { opacity: 0.88; background: var(--ink); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px; background: var(--ink); color: var(--bg); border-radius: 100px; font-size: 13px; box-shadow: 0 24px 60px -20px rgba(24,23,26,0.30); display: flex; align-items: center; gap: 10px; opacity: 0; pointer-events: none; transform: translateY(8px); transition: all 220ms cubic-bezier(0.22,1,0.36,1); z-index: 100; }
+  .toast.shown { opacity: 1; transform: translateY(0); }
+  .toast .em { color: var(--orange); }
+</style>
+</head>
+<body data-screen-label="Webapp — workspace">
+  <div class="app">
+    <!-- SIDEBAR -->
+    <aside>
+      <div class="brand"><img src="../../assets/phoenix-logo.png" alt="">Phoenix0</div>
+
+      <nav class="primary">
+        <a class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>Workspace</a>
+        <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Job monitoring</a>
+        <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h6l2 3h10v10H3z"/></svg>Pipelines</a>
+        <a><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</a>
+      </nav>
+
+      <div class="session-block">
+        <div class="label">Current session</div>
+        <div class="session-picker"><span class="name">J&amp;J — Fintech Unk — Tact</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+        <div class="session-actions">
+          <button class="btn-mini solid">New</button>
+          <button class="btn-mini">Open</button>
+          <button class="btn-mini">Archive</button>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>arash@phoenix0.online</span>
+        <button>Sign out</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main>
+      <div class="topbar">
+        <h1>Workspace</h1>
+        <button class="out">Sign out</button>
+      </div>
+
+      <div class="session-head">
+        <h2>J&amp;J — Fintech Unk — Tact — Lead ML Engineer</h2>
+        <div class="actions">
+          <button class="btn-rename">Rename</button>
+          <button class="btn-delete">Delete session</button>
+        </div>
+      </div>
+      <div class="session-meta">Loaded: 6 resources · last activity 11:55 today</div>
+
+      <!-- REQUIRED RESOURCES -->
+      <div class="section">
+        <div class="section-head"><h3>Required resources</h3><span class="hint">Inputs · v1</span></div>
+        <div class="row-list" id="resources">
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">base_resume <span class="v">v1</span> <span class="from">From default</span></div>
+            <div class="right">
+              <span class="kind">user_default</span>
+              <span class="status ok"><span class="dot"></span>Loaded</span>
+              <button class="icon-btn" title="View"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button class="icon-btn" title="Upload"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">honest_context <span class="v">v1</span> <span class="from">From default</span></div>
+            <div class="right">
+              <span class="kind">user_default</span>
+              <span class="status ok"><span class="dot"></span>Loaded</span>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">job_description <span class="v">v1</span></div>
+            <div class="right">
+              <span class="kind">text</span>
+              <span class="status ok"><span class="dot"></span>Loaded</span>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">company_info <span class="v">v1</span></div>
+            <div class="right">
+              <span class="kind">text</span>
+              <span class="status ok"><span class="dot"></span>Loaded</span>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+              <button class="icon-btn" title="Re-research"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row" id="add-context-row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">additional_context</div>
+            <div class="right">
+              <span class="status miss"><span class="dot"></span>Empty</span>
+              <button class="icon-btn" id="add-ctx" title="Add"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 5v14M5 12h14"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">communication_history <span class="v">v1</span></div>
+            <div class="right">
+              <span class="kind">text</span>
+              <span class="status ok"><span class="dot"></span>Loaded</span>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GENERATED ARTIFACTS -->
+      <div class="section">
+        <div class="section-head"><h3>Generated artifacts</h3><span class="hint">Drafts · re-runnable</span></div>
+        <div class="row-list" id="artifacts">
+
+          <div class="row open">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">Career consultant <span class="v">v1</span></div>
+            <div class="right">
+              <span class="status ok"><span class="dot"></span>Generated</span>
+              <span class="stamp">2026-05-08 · 11:51</span>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button class="gen" title="Re-generate"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97a.5.5 0 0 0 .39.81H11l-1.5 8.22a.5.5 0 0 0 .89.39L19.91 11.42a.5.5 0 0 0-.39-.81H13l1.5-8.22a.5.5 0 0 0-.89-.39z"/></svg></button>
+            </div>
+            <div class="row-body">
+              <div class="draft">
+                <p><strong>Should you apply?</strong> Yes — but lead with the production-MLOps work, not the research credentials. The role's "Lead ML Engineer" framing is misleading: 60% of the JD describes platform plumbing — model serving, feature stores, pipelines — and only 20% is modelling.</p>
+                <p>Your last two years at Tact map cleanly onto the platform side; the J&amp;J Fintech team has been hiring people from similar mid-stage fintech infra teams (see the LinkedIn pull in <strong>company_info</strong>). The remaining 20% is regulated-domain fluency, which you'll signal through the credit-risk project on your <strong>base_resume</strong>.</p>
+                <p>Three things to lead with: production scale (model-serving QPS), regulated-data experience, and a hiring lens — they need someone who can also build the team out.</p>
+              </div>
+              <div class="draft-foot">
+                <div class="src">Used <em>base_resume</em> · <em>job_description</em> · <em>company_info</em></div>
+                <div class="acts"><button class="btn-text">Copy</button><button class="btn-text">Export</button><button class="btn-text primary">Edit</button></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">Cover letter</div>
+            <div class="right">
+              <span class="status miss"><span class="dot"></span>Not generated</span>
+              <button class="gen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97a.5.5 0 0 0 .39.81H11l-1.5 8.22a.5.5 0 0 0 .89.39L19.91 11.42a.5.5 0 0 0-.39-.81H13l1.5-8.22a.5.5 0 0 0-.89-.39z"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">Tailored resume</div>
+            <div class="right">
+              <span class="status miss"><span class="dot"></span>Not generated</span>
+              <button class="gen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97a.5.5 0 0 0 .39.81H11l-1.5 8.22a.5.5 0 0 0 .89.39L19.91 11.42a.5.5 0 0 0-.39-.81H13l1.5-8.22a.5.5 0 0 0-.89-.39z"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">Application form questions</div>
+            <div class="right">
+              <span class="status miss"><span class="dot"></span>Not generated</span>
+              <button class="gen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97a.5.5 0 0 0 .39.81H11l-1.5 8.22a.5.5 0 0 0 .89.39L19.91 11.42a.5.5 0 0 0-.39-.81H13l1.5-8.22a.5.5 0 0 0-.89-.39z"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">Email response</div>
+            <div class="right">
+              <span class="status miss"><span class="dot"></span>Not generated</span>
+              <button class="gen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97a.5.5 0 0 0 .39.81H11l-1.5 8.22a.5.5 0 0 0 .89.39L19.91 11.42a.5.5 0 0 0-.39-.81H13l1.5-8.22a.5.5 0 0 0-.89-.39z"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">LinkedIn response <span class="v">v1</span></div>
+            <div class="right">
+              <span class="status ok"><span class="dot"></span>Generated</span>
+              <span class="stamp">2026-05-08 · 11:55</span>
+              <button class="icon-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+              <button class="gen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97a.5.5 0 0 0 .39.81H11l-1.5 8.22a.5.5 0 0 0 .89.39L19.91 11.42a.5.5 0 0 0-.39-.81H13l1.5-8.22a.5.5 0 0 0-.89-.39z"/></svg></button>
+            </div>
+          </div>
+
+          <div class="row">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+            <div class="name">Interview prep</div>
+            <div class="right">
+              <span class="status miss"><span class="dot"></span>Not generated</span>
+              <button class="gen"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4.09 12.97a.5.5 0 0 0 .39.81H11l-1.5 8.22a.5.5 0 0 0 .89.39L19.91 11.42a.5.5 0 0 0-.39-.81H13l1.5-8.22a.5.5 0 0 0-.89-.39z"/></svg></button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast"><span>Drafting</span><span class="em">cover letter</span><span>—</span><span>using 4 inputs</span></div>
+
+  <script>
+    // expand/collapse rows
+    document.querySelectorAll('.row .chev').forEach(chev => {
+      chev.addEventListener('click', () => {
+        const row = chev.closest('.row');
+        if (row.querySelector('.row-body')) row.classList.toggle('open');
+      });
+    });
+
+    // generate buttons → toast
+    const toast = document.getElementById('toast');
+    document.querySelectorAll('.gen').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const name = btn.closest('.row').querySelector('.name').childNodes[0].textContent.trim();
+        toast.querySelector('.em').textContent = name.toLowerCase();
+        toast.classList.add('shown');
+        clearTimeout(window.__t);
+        window.__t = setTimeout(() => toast.classList.remove('shown'), 2400);
+      });
+    });
+
+    // additional_context inline-add
+    document.getElementById('add-ctx').addEventListener('click', () => {
+      const row = document.getElementById('add-context-row');
+      const right = row.querySelector('.right');
+      if (row.querySelector('.inline-input')) return;
+      const input = document.createElement('input');
+      input.className = 'inline-input';
+      input.placeholder = 'Paste a referral note, tone you want, or specific concerns…';
+      const cell = document.createElement('div');
+      cell.style.gridColumn = '2 / -1';
+      cell.appendChild(input);
+      row.appendChild(cell);
+      right.style.display = 'none';
+      input.focus();
+      input.addEventListener('blur', () => {
+        if (input.value.trim()) {
+          row.querySelector('.name').innerHTML = 'additional_context <span class="v">v1</span>';
+          row.querySelector('.status').className = 'status ok';
+          row.querySelector('.status').innerHTML = '<span class="dot"></span>Loaded';
+        }
+        cell.remove();
+        right.style.display = '';
+      });
+    });
+  </script>
+</body>
+</html>
